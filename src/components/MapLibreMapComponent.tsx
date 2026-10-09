@@ -6,9 +6,8 @@ import { useApp } from '../context/AppContext';
 import { 
   Globe, Compass, Layers, Eye, ShieldAlert, BookOpen, 
   RotateCcw, Sparkles, Building2, MapPin, ZoomIn, ZoomOut,
-  Crosshair, Navigation, Maximize2
+  Navigation, Maximize2
 } from 'lucide-react';
-import { SP_CAMERA_PRESETS, CameraPreset } from './MapComponent';
 
 interface MapLibreMapComponentProps {
   chamados: Chamado[];
@@ -43,7 +42,6 @@ export default function MapLibreMapComponent({
   const [bearing, setBearing] = useState<number>(-15);
   const [is3DMode, setIs3DMode] = useState<boolean>(true);
   const [styleMode, setStyleMode] = useState<'STANDARD' | 'DARK' | 'CADASTRO'>('STANDARD');
-  const [activePreset, setActivePreset] = useState<string>('sp-geral');
   const [activePopupInfo, setActivePopupInfo] = useState<{
     tipo: 'CHAMADO' | 'BIBLIOTECA' | 'HOTSPOT';
     item: any;
@@ -57,7 +55,7 @@ export default function MapLibreMapComponent({
         return [sub.lng, sub.lat]; // [lng, lat]
       }
     }
-    return [-46.6333, -23.5505]; // Centro de São Paulo [lng, lat]
+    return [-46.6323, -23.5855]; // Centro da jurisdição SUB-VM [lng, lat]
   }, [selectedSubId, subprefeituras]);
 
   // Tiles humanitários OSM gratuitos e sem chave de API para o motor MapLibre.
@@ -112,7 +110,7 @@ export default function MapLibreMapComponent({
         container: mapContainerRef.current,
         style: mapStyle,
         center: centerCoords,
-        zoom: selectedSubId ? 13 : 11.5,
+        zoom: 13.5,
         pitch: is3DMode ? pitch : 0,
         bearing: is3DMode ? bearing : 0,
         attributionControl: false
@@ -155,7 +153,7 @@ export default function MapLibreMapComponent({
     // Evita manter o motor em estado contínuo de zoom durante atualizações frequentes.
     mapRef.current.jumpTo({
       center: centerCoords,
-      zoom: selectedSubId ? 13.5 : 11.5,
+      zoom: 13.5,
       pitch: is3DMode ? 45 : 0
     });
   }, [centerCoords, selectedSubId, is3DMode]);
@@ -299,23 +297,6 @@ export default function MapLibreMapComponent({
     setIs3DMode(false);
   };
 
-  const handleApplyPreset = (preset: CameraPreset) => {
-    setActivePreset(preset.id);
-    if (!mapRef.current) return;
-    mapRef.current.flyTo({
-      center: [preset.center[1], preset.center[0]], // MapLibre usa [lng, lat]
-      zoom: preset.zoom,
-      pitch: is3DMode ? 45 : 0,
-      bearing: is3DMode ? -15 : 0,
-      duration: 1200,
-      essential: true
-    });
-  };
-
-  const handleRecenter = () => {
-    handleApplyPreset(SP_CAMERA_PRESETS[0]);
-  };
-
   return (
     <div className="relative w-full h-full overflow-hidden flex flex-col bg-slate-900">
       {/* Barra Superior Esquerda: Modos Cartográficos MapLibre GL */}
@@ -377,41 +358,6 @@ export default function MapLibreMapComponent({
         </button>
       </div>
 
-      {/* Barra Superior Direita: Presets de Navegação Articulada */}
-      <div className="absolute top-3 right-3 z-30 flex items-center gap-1 bg-slate-900/90 backdrop-blur-md p-1 rounded-xl border border-slate-700/80 shadow-xl text-xs text-white">
-        <div className="flex items-center gap-1 px-2 py-1 text-[11px] font-bold text-slate-300 border-r border-slate-700/80 hidden md:flex">
-          <Compass className="w-3.5 h-3.5 text-sky-400" />
-          <span>Vistas</span>
-        </div>
-
-        <div className="flex items-center gap-1 overflow-x-auto max-w-[400px] scrollbar-none py-0.5 px-0.5">
-          {SP_CAMERA_PRESETS.map((preset) => {
-            const isActive = activePreset === preset.id;
-            return (
-              <button
-                key={preset.id}
-                onClick={() => handleApplyPreset(preset)}
-                className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-all whitespace-nowrap ${
-                  isActive
-                    ? 'bg-blue-600 text-white shadow-sm ring-1 ring-blue-400 font-bold'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800'
-                }`}
-                title={`Navegar suavemente para: ${preset.nome}`}
-              >
-                {preset.sigla}
-              </button>
-            );
-          })}
-        </div>
-
-        <button
-          onClick={handleRecenter}
-          className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg border-l border-slate-700/80 transition-colors ml-0.5"
-          title="Recentralizar para São Paulo (Visão Geral)"
-        >
-          <Crosshair className="w-3.5 h-3.5 text-emerald-400" />
-        </button>
-      </div>
 
       {/* Container WebGL do MapLibre */}
       <div ref={mapContainerRef} className="w-full h-full" />

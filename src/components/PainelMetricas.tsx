@@ -84,7 +84,7 @@ export default function PainelMetricas({
             </div>
             <div className="truncate">
               <h3 className="font-bold text-sm truncate">
-                {selectedSubId === 'ALL' ? 'Análise Geral da Capital' : `Análise: ${selectedSubprefeitura?.nome}`}
+                {selectedSubId === 'ALL' ? 'Análise: SUB-VM' : `Análise: ${selectedSubprefeitura?.nome}`}
               </h3>
               <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-none truncate">
                 Painel analítico da Sala de Situação

@@ -42,6 +42,7 @@ Registros de Decisão de Arquitetura (ADRs) vigentes e históricos. Cada arquivo
 - [`0016-consolidacao-cockpit-bairros-e-eliminacao-de-redundancias.md`](decisions/0016-consolidacao-cockpit-bairros-e-eliminacao-de-redundancias.md) — Consolidação do Cockpit de Decisão Executiva por Bairros (SUB-VM: Vila Mariana, Moema e Saúde) e eliminação de áreas e infográficos redundantes.
 - [`0017-redesign-ui-ux-profissional-clean-institucional-sem-estetica-ai.md`](decisions/0017-redesign-ui-ux-profissional-clean-institucional-sem-estetica-ai.md) — Redesign de UI/UX profissional, clean e institucional (eliminação de gradientes, badges de neon, sombras pesadas e estética "AI generated").
 - [`0018-provedores-cartograficos-sem-chave-e-remocao-carto.md`](decisions/0018-provedores-cartograficos-sem-chave-e-remocao-carto.md) — Remoção do CARTO após exigência de chave e adoção de tiles sem chave com OpenStreetMap, HOT e Esri.
+- [`0019-recorte-territorial-exclusivo-sub-vm.md`](decisions/0019-recorte-territorial-exclusivo-sub-vm.md) — Restrição da demonstração à SUB-VM, preservando os seis modos cartográficos e os GeoJSONs externos ao escopo sem carregá-los.
 
 ### `plans/`
 Planos de trabalho ativos e documentos vivos de evolução contínua da solução.
@@ -55,6 +56,7 @@ Planos de trabalho ativos e documentos vivos de evolução contínua da soluçã
 - [`plano-evolucao-plataforma-govtech.md`](plans/plano-evolucao-plataforma-govtech.md) — Roteiro geral de expansão de funcionalidades, integrações e endurecimento operacional.
 - [`plano-expansao-geoespacial-e-indicadores.md`](plans/plano-expansao-geoespacial-e-indicadores.md) — Plano em execução para delimitação territorial, HUD e indicadores públicos de segurança/trânsito.
 - [`etapa-6-delimitacao-geografica.md`](plans/etapa-6-delimitacao-geografica.md) — Plano planejado para delimitação GeoJSON das 32 subprefeituras.
+- [`plano-recorte-demonstracao-sub-vm.md`](plans/plano-recorte-demonstracao-sub-vm.md) — **Plano executado**: recorte integral da demonstração para Vila Mariana, Moema e Saúde.
 
 ### `runbooks/`
 Rotinas operacionais verificáveis para publicação e suporte do projeto.

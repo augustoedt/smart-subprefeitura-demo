@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   Camera, Map as MapIcon, Layers, Filter, CheckCircle2, AlertTriangle, Clock, Calendar, 
-  Hash, MapPin, X, Flame, Eye, EyeOff, LayoutTemplate, Activity, BarChart3, List,
+  Hash, MapPin, X, Flame, Eye, EyeOff, Activity, BarChart3, List,
   Plus, Database, Shield, Users, Car, History, Sparkles, Monitor, Info, Check, SlidersHorizontal,
   Radio, Hexagon, Globe, BookOpen, Mountain, ChevronRight, ChevronLeft, ChevronDown, Sliders
 } from 'lucide-react';
@@ -25,6 +25,7 @@ import { useApp } from '../context/AppContext';
 import { executarCruzamentoCamadas } from '../utils/geoSpatial';
 
 type LayerFilter = 'SOCIAL' | 'ZELADORIA' | 'INFRAESTRUTURA' | 'TODOS';
+type DistrictFilter = 'TODOS' | 'Vila Mariana' | 'Moema' | 'Saúde';
 
 const LAYER_MAPPING: Record<LayerFilter, string[]> = {
   SOCIAL: ['MORADOR_RUA', 'DESFAZIMENTO'],
@@ -34,13 +35,13 @@ const LAYER_MAPPING: Record<LayerFilter, string[]> = {
 };
 
 export default function SalaSituacao({ chamados, session }: { chamados: Chamado[], session: UserSession }) {
-  const [viewMode, setViewMode] = useState<'HEATMAP' | 'CLUSTER' | 'NORMAL' | 'LISTA' | 'COMPARACAO'>('CLUSTER');
+  const [viewMode, setViewMode] = useState<'HEATMAP' | 'CLUSTER' | 'NORMAL' | 'LISTA'>('CLUSTER');
   const [showPontosCegos, setShowPontosCegos] = useState(false);
-  const [compareSubId, setCompareSubId] = useState<string>('ALL');
   
   const [activeLayer, setActiveLayer] = useState<LayerFilter>('TODOS');
   const [heatmapType, setHeatmapType] = useState<'DENSIDADE' | 'CRITICIDADE'>('DENSIDADE');
-  const [selectedSubId, setSelectedSubId] = useState<string>(session.role === 'GESTOR' && session.subprefeituraId ? session.subprefeituraId : 'ALL');
+  const [selectedDistrict, setSelectedDistrict] = useState<DistrictFilter>('TODOS');
+  const selectedSubId = '2';
   const [selectedChamado, setSelectedChamado] = useState<Chamado | null>(null);
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState<boolean>(true);
   const [focusMode, setFocusMode] = useState(false);
@@ -85,7 +86,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
   // Cruzamento Geoespacial Contínuo (Interno SP156 x Externo Fontes Públicas)
   const { hotspots: hotspotsCruzamento, resumo: resumoCruzamento } = useMemo(() => {
     return executarCruzamentoCamadas(
-      chamados,
+      chamados.filter((chamado) => selectedDistrict === 'TODOS' || chamado.distrito === selectedDistrict),
       publicSources,
       {
         raioMetros: crossRadiusMeters,
@@ -93,9 +94,9 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
         fonteExternaId: crossSelectedSourceId,
         apenasAtivas: true
       },
-      selectedSubId !== 'ALL' ? subprefeituras.find(s => s.id === selectedSubId)?.nome : undefined
+      'Vila Mariana'
     );
-  }, [chamados, publicSources, crossRadiusMeters, crossSelectedCategory, crossSelectedSourceId, selectedSubId]);
+  }, [chamados, publicSources, crossRadiusMeters, crossSelectedCategory, crossSelectedSourceId, selectedDistrict]);
 
   // Fontes públicas ativas
   const activePublicSources = useMemo(() => {
@@ -161,10 +162,11 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
   const filteredChamados = useMemo(() => {
     return chamados.filter((c) => {
       const matchLayer = LAYER_MAPPING[activeLayer].includes(c.categoria);
-      const matchSub = selectedSubId === 'ALL' || c.subprefeituraId === selectedSubId;
-      return matchLayer && matchSub;
+      const matchSub = c.subprefeituraId === selectedSubId;
+      const matchDistrict = selectedDistrict === 'TODOS' || c.distrito === selectedDistrict;
+      return matchLayer && matchSub && matchDistrict;
     });
-  }, [activeLayer, selectedSubId, chamados]);
+  }, [activeLayer, selectedDistrict, chamados]);
 
   // Analytics com suporte a variação em tempo real
   const subprefeituraStats = useMemo(() => {
@@ -182,9 +184,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
     });
   }, [filteredChamados, chartDeltas]);
 
-  const selectedSubprefeitura = useMemo(() => {
-    return subprefeituras.find((s) => s.id === selectedSubId) || null;
-  }, [selectedSubId]);
+  const selectedSubprefeitura = subprefeituras[0] || null;
 
   const handleMarkerClick = (chamado: Chamado) => {
     setSelectedChamado(chamado);
@@ -203,56 +203,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
     }`}>
       {/* 1. Canvas do Mapa (100% Imersivo de Borda a Borda) */}
       <div className="flex-1 relative w-full h-full overflow-hidden">
-        {viewMode === 'COMPARACAO' ? (
-          <div className="w-full h-full flex flex-col md:flex-row relative overflow-hidden">
-            {/* Split Map Pane 1 */}
-            <div className="flex-1 h-full relative overflow-hidden border-b md:border-b-0 md:border-r border-slate-700/80">
-              <div className="absolute top-16 left-4 z-20 px-3 py-1.5 bg-slate-900/90 text-white rounded-xl border border-slate-700 text-xs font-bold shadow-lg backdrop-blur-md">
-                Mapa Principal: {selectedSubprefeitura?.nome || 'São Paulo (Geral)'}
-              </div>
-              <MapComponent
-                chamados={filteredChamados}
-                viewMode="CLUSTER"
-                showPontosCegos={showPontosCegos}
-                onMarkerClick={handleMarkerClick}
-                selectedSubprefeitura={selectedSubprefeitura}
-                heatmapType={heatmapType}
-                activePublicSources={activePublicSources}
-                highContrastMode={highContrastMode}
-                onPublicPointClick={handlePublicPointClick}
-              />
-            </div>
-            
-            {/* Split Map Pane 2 */}
-            <div className="flex-1 h-full relative overflow-hidden">
-              <div className="absolute top-16 left-4 z-20 px-3 py-1.5 bg-slate-900/90 text-white rounded-xl border border-slate-700 text-xs font-bold shadow-lg backdrop-blur-md flex items-center gap-2">
-                <span className="text-xs font-bold">Comparar com:</span>
-                <select
-                  className="bg-slate-800 border border-slate-600 text-white text-xs font-semibold rounded-lg px-2 py-0.5 outline-none cursor-pointer"
-                  value={compareSubId}
-                  onChange={(e) => setCompareSubId(e.target.value)}
-                >
-                  <option value="ALL">Todas as Subprefeituras</option>
-                  {subprefeituras.map((sub) => (
-                    <option key={sub.id} value={sub.id}>{sub.nome}</option>
-                  ))}
-                </select>
-              </div>
-              <MapComponent
-                chamados={chamados.filter(c => (compareSubId === 'ALL' || c.subprefeituraId === compareSubId) && LAYER_MAPPING[activeLayer].includes(c.categoria))}
-                viewMode="CLUSTER"
-                showPontosCegos={showPontosCegos}
-                onMarkerClick={handleMarkerClick}
-                selectedSubprefeitura={subprefeituras.find(s => s.id === compareSubId) || null}
-                heatmapType={heatmapType}
-                activePublicSources={activePublicSources}
-                highContrastMode={highContrastMode}
-                onPublicPointClick={handlePublicPointClick}
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="w-full h-full relative overflow-hidden">
+        <div className="w-full h-full relative overflow-hidden">
             {activeMapEngine === 'LEAFLET' && (
               <MapComponent
                 chamados={filteredChamados}
@@ -276,7 +227,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 chamados={filteredChamados}
                 subprefeituras={subprefeituras}
                 fontesPublicas={publicSources}
-                selectedSubId={selectedSubId === 'ALL' ? null : selectedSubId}
+                selectedSubId={selectedSubId}
                 onSelectChamado={handleMarkerClick}
                 onSelectBiblioteca={(b) => setModalBiblioteca(b)}
                 highContrast={highContrastMode}
@@ -316,7 +267,6 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 activePublicSources={activePublicSources}
                 highContrastMode={highContrastMode}
                 onPublicPointClick={handlePublicPointClick}
-                onSelectSubprefeitura={(sub) => setSelectedSubId(sub.id)}
                 crossAnalysisActive={crossAnalysisActive}
                 hotspotsCruzamento={hotspotsCruzamento}
               />
@@ -364,7 +314,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 chamados={filteredChamados}
                 subprefeituras={subprefeituras}
                 fontesPublicas={publicSources}
-                selectedSubId={selectedSubId === 'ALL' ? null : selectedSubId}
+                selectedSubId={selectedSubId}
                 onSelectChamado={handleMarkerClick}
                 onSelectBiblioteca={(b) => setModalBiblioteca(b)}
                 highContrast={highContrastMode}
@@ -378,9 +328,9 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 chamados={filteredChamados}
                 subprefeituras={subprefeituras}
                 fontesPublicas={publicSources}
-                selectedSubId={selectedSubId === 'ALL' ? null : selectedSubId}
+                selectedSubId={selectedSubId}
                 onSelectChamado={handleMarkerClick}
-                onSelectSubprefeitura={(sub) => setSelectedSubId(sub.id)}
+                onSelectSubprefeitura={() => undefined}
                 highContrast={highContrastMode}
                 crossAnalysisActive={crossAnalysisActive}
                 hotspotsCruzamento={hotspotsCruzamento}
@@ -392,7 +342,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 chamados={filteredChamados}
                 subprefeituras={subprefeituras}
                 fontesPublicas={publicSources}
-                selectedSubId={selectedSubId === 'ALL' ? null : selectedSubId}
+                selectedSubId={selectedSubId}
                 onSelectChamado={handleMarkerClick}
                 highContrast={highContrastMode}
                 crossAnalysisActive={crossAnalysisActive}
@@ -405,7 +355,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 chamados={filteredChamados}
                 subprefeituras={subprefeituras}
                 fontesPublicas={publicSources}
-                selectedSubId={selectedSubId === 'ALL' ? null : selectedSubId}
+                selectedSubId={selectedSubId}
                 onSelectChamado={handleMarkerClick}
                 highContrast={highContrastMode}
                 crossAnalysisActive={crossAnalysisActive}
@@ -519,7 +469,6 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
             </div>
             )}
           </div>
-        )}
 
         {/* 2. IN-MAP FLOATING CONTROLS (HUD) */}
         {!focusMode && (
@@ -528,43 +477,25 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
             <div className="absolute top-3 left-3 right-3 sm:left-4 sm:right-4 z-30 pointer-events-none flex flex-wrap items-center justify-between gap-2.5">
               {/* Left Cluster: Território, Camadas & Fontes */}
               <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 p-1.5 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-2xl backdrop-blur-md text-white">
-                {/* Território Selector */}
+                {/* Filtro intraterritorial da SUB-VM */}
                 <div className="flex items-center gap-1 px-2 py-1 bg-slate-800/90 rounded-xl border border-slate-700/80">
                   <MapPin className="w-3.5 h-3.5 text-sky-400 shrink-0" />
                   <select
-                    className="bg-transparent text-xs font-semibold text-white focus:ring-0 cursor-pointer outline-none max-w-[130px] sm:max-w-[170px] truncate"
-                    value={selectedSubId}
+                    className="bg-transparent text-xs font-semibold text-white focus:ring-0 cursor-pointer outline-none max-w-[150px] sm:max-w-[190px] truncate"
+                    value={selectedDistrict}
                     onChange={(e) => {
-                      setSelectedSubId(e.target.value);
+                      setSelectedDistrict(e.target.value as DistrictFilter);
                       setSelectedChamado(null);
                       setSelectedPublicPoint(null);
                     }}
+                    title="Filtrar chamados por distrito da SUB-VM"
                   >
-                    <option value="ALL" className="bg-slate-800 text-white">Todas Subprefeituras</option>
-                    {subprefeituras.map((sub) => (
-                      <option key={sub.id} value={sub.id} className="bg-slate-800 text-white">
-                        {sub.nome} {sub.id === '2' ? '★ (Vila Mariana)' : ''}
-                      </option>
-                    ))}
+                    <option value="TODOS" className="bg-slate-800 text-white">SUB-VM • Todos os distritos</option>
+                    <option value="Vila Mariana" className="bg-slate-800 text-white">Distrito Vila Mariana</option>
+                    <option value="Moema" className="bg-slate-800 text-white">Distrito Moema</option>
+                    <option value="Saúde" className="bg-slate-800 text-white">Distrito Saúde</option>
                   </select>
                 </div>
-
-                {/* Atalho Rápido para Jurisdição Vila Mariana */}
-                <button
-                  onClick={() => {
-                    setSelectedSubId(selectedSubId === '2' ? 'ALL' : '2');
-                    setSelectedChamado(null);
-                    setSelectedPublicPoint(null);
-                  }}
-                  className={`flex items-center gap-1 px-2 py-1 rounded-xl text-xs font-bold transition-all border whitespace-nowrap ${
-                    selectedSubId === '2'
-                      ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md ring-1 ring-amber-300'
-                      : 'bg-slate-800/90 hover:bg-slate-700 text-amber-300 border-amber-500/40'
-                  }`}
-                  title="Focar na Subprefeitura Vila Mariana (Distritos: Vila Mariana, Moema, Saúde)"
-                >
-                  <span>★ SUB-VM</span>
-                </button>
 
             {/* Filtros Rápidos de Categorias */}
             <div className="flex items-center gap-0.5 bg-slate-800/90 p-0.5 rounded-xl border border-slate-700/80">
@@ -633,7 +564,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
               </select>
             </div>
 
-            {/* Modos de Visão (Cluster, Heatmap, Lista, Comparação) */}
+            {/* Modos de Visão (Cluster, Heatmap e Lista) */}
             <div className="flex items-center gap-0.5 bg-slate-800/90 p-0.5 rounded-xl border border-slate-700/80">
               <button
                 onClick={() => setViewMode('CLUSTER')}
@@ -656,15 +587,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
               >
                 <List className="w-3.5 h-3.5" />
               </button>
-              {session.role !== 'GESTOR' && (
-                <button
-                  onClick={() => setViewMode('COMPARACAO')}
-                  className={`p-1.5 rounded-lg transition-colors ${viewMode === 'COMPARACAO' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
-                  title="Comparação lado a lado (Split Map)"
-                >
-                  <LayoutTemplate className="w-3.5 h-3.5" />
-                </button>
-              )}
+
             </div>
 
             {/* Pontos Cegos Toggle */}
@@ -694,8 +617,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
             </button>
 
             {/* Painel de Análise Toggle Button */}
-            {viewMode !== 'COMPARACAO' && (
-              <button
+            <button
                 onClick={() => setIsAnalyticsOpen(!isAnalyticsOpen)}
                 className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-xl transition-all border ${
                   isAnalyticsOpen
@@ -707,7 +629,6 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 <BarChart3 className="w-3.5 h-3.5 text-sky-400" />
                 <span className="hidden sm:inline">Estatísticas</span>
               </button>
-            )}
           </div>
         </div>
 
@@ -849,7 +770,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
         )}
 
         {/* Region Analysis Floating Panel */}
-        {!selectedChamado && !selectedPublicPoint && viewMode !== 'LISTA' && viewMode !== 'COMPARACAO' && isAnalyticsOpen && !focusMode && (
+        {!selectedChamado && !selectedPublicPoint && viewMode !== 'LISTA' && isAnalyticsOpen && !focusMode && (
            <div className={`absolute top-20 right-4 bottom-16 w-80 sm:w-96 border rounded-2xl shadow-2xl flex flex-col shrink-0 overflow-hidden z-30 pointer-events-auto backdrop-blur-xl animate-in slide-in-from-right-6 duration-200 ${
              highContrastMode ? 'bg-slate-900/95 border-slate-700 text-white' : 'bg-white/95 border-slate-200 text-slate-900 shadow-slate-900/20'
            }`}>
@@ -859,7 +780,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 <h3 className="font-semibold flex items-center gap-2 text-sm truncate">
                   <BarChart3 className="w-4 h-4 text-blue-500 shrink-0" />
                   <span className="truncate">
-                    {selectedSubId === 'ALL' ? 'Análise Geral da Capital' : `Análise: ${selectedSubprefeitura?.nome}`}
+                    {selectedDistrict === 'TODOS' ? 'Análise: SUB-VM' : `Distrito: ${selectedDistrict}`}
                   </span>
                 </h3>
                 <div className="flex items-center gap-1.5">

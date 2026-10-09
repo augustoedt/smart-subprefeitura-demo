@@ -27,7 +27,7 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
    - **Interface GIS de Alta Precisão**: Controles in-map estilizados como software corporativo de geoprocessamento (padrão QGIS / ArcGIS Web), mapa full-screen de borda a borda.
    - **6 Motores Cartográficos Intercambiáveis**: Leaflet, MapLibre GL 3D, Satélite Esri com ortofoto, Mapa Coroplético, Buffers de Influência Cívica e Heatmap Kernel métrico. Os endpoints CARTO foram removidos após passarem a exigir chave; Leaflet usa OpenStreetMap, MapLibre usa tiles HOT/OpenStreetMap e o satélite usa imagem e referências Esri, conforme a [ADR 0018](../decisions/0018-provedores-cartograficos-sem-chave-e-remocao-carto.md).
    - **Camadas & Dados Públicos**: Cruzamento espacial com fórmula de Haversine contra bases de SSP-SP, IBGE, CET e 10 Bibliotecas Públicas da capital com raio de proteção de 500m.
-   - **Preset Territorial**: Botão "SUB-VM" para recentralização imediata na Vila Mariana e perspectivas 3D.
+   - **Enquadramento Territorial Fixo**: mapas iniciam na SUB-VM; a barra "Vistas", presets metropolitanos e botão de recentralização foram removidos, preservando zoom e arraste nativos.
 
 4. **Painel Administrativo & Triagem Kanban**:
    - **Fluxo Operacional de 5 Colunas**: *Novo*, *Encaminhado*, *Em Execução*, *Aguardando Aprovação* e *Concluído*.
@@ -53,10 +53,21 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
 
 ## Em andamento
 
+- **Em homologação:** branch `feature/vila-mariana-only` com o [recorte territorial exclusivo da SUB-VM](../plans/plano-recorte-demonstracao-sub-vm.md) validado localmente e aguardando publicação pela Railway.
 - **Em execução:** [Plano de expansão geoespacial e indicadores](../plans/plano-expansao-geoespacial-e-indicadores.md), com delimitação territorial e correlações de segurança/trânsito pendentes de atualização do progresso por fase.
 - **Em execução parcial:** [Etapa 6 — delimitação geográfica](../plans/etapa-6-delimitacao-geografica.md). Os 32 contornos GeoJSON autoritativos foram copiados para `public/data/subprefeituras/`, associados aos IDs internos da aplicação e carregados sob demanda no modo coroplético. As malhas simuladas antigas foram removidas. Permanecem pendentes a eventual simplificação controlada das geometrias e a migração da renderização para o componente `<GeoJSON />` nativo do React-Leaflet.
 
 ### Entregas concluídas
+
+- **Sprint 21 (Recorte Territorial Exclusivo da Demonstração SUB-VM) concluída e validada localmente**:
+  - Runtime, chamados, fontes públicas, equipamentos e módulo social restritos à Subprefeitura Vila Mariana.
+  - Filtros municipais substituídos pelos distritos Vila Mariana, Moema e Saúde.
+  - Comparação entre subprefeituras e referências municipais removidas da interface ativa.
+  - Barra "Vistas" removida de Leaflet e MapLibre; enquadramento inicial fixado na SUB-VM.
+  - Loader territorial reduzido a `vila-mariana.geojson`, preservando os outros 31 arquivos sem carregá-los.
+  - Seis modos cartográficos, quatro módulos, perfis, Gemini e Kanban preservados.
+  - `npm run lint`, `npm run build` e validação visual dos seis modos aprovados.
+  - Decisão registrada na [ADR 0019](../decisions/0019-recorte-territorial-exclusivo-sub-vm.md).
 
 - **Sprint 20 (Redesign de UI/UX Profissional, Clean e Institucional — Eliminação do Visual "AI Generated") 100% Concluída e Validada**:
   - **Fase 1 (Design System Governamental e Tipografia)**:
@@ -245,8 +256,9 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
 
 ## Próximo passo
 
-1. **Retomar o plano geoespacial em execução**: identificar a próxima fase e registrar seu avanço em [plano-expansao-geoespacial-e-indicadores.md](../plans/plano-expansao-geoespacial-e-indicadores.md); manter a [Etapa 6](../plans/etapa-6-delimitacao-geografica.md) como planejada até priorização.
-2. **Homologar a versão publicada**:
+1. **Publicar a branch de demonstração**: apontar o serviço Railway `subprefeitura` para `feature/vila-mariana-only`, acompanhar o deployment e validar a URL pública.
+2. **Retomar o plano geoespacial em execução**: identificar a próxima fase e registrar seu avanço em [plano-expansao-geoespacial-e-indicadores.md](../plans/plano-expansao-geoespacial-e-indicadores.md); manter a [Etapa 6](../plans/etapa-6-delimitacao-geografica.md) como planejada até priorização.
+3. **Homologar a versão publicada**:
    - Validar os fluxos dos quatro módulos na URL de produção e coletar feedback de gestores e usuários finais.
    - Avaliar a legibilidade das sobreposições de mapas de calor em monitores ultrawide e projetores, e validar os indicadores públicos fictícios.
 

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Sidebar, Section } from './components/Sidebar';
 import { mockChamados, subprefeituras } from './data';
 import SalaSituacao from './components/SalaSituacao';
@@ -28,6 +28,11 @@ export default function App() {
   const [zapSession, setZapSession] = useState<ZapChatSession>(MOCK_CONVERSA_INICIAL);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Garante o recorte territorial mesmo durante Fast Refresh de uma sessão local antiga.
+  useEffect(() => {
+    setChamados((prev) => prev.filter((chamado) => chamado.subprefeituraId === '2'));
+  }, []);
 
   const updateChamadosComNotificacao: React.Dispatch<React.SetStateAction<Chamado[]>> = (action) => {
     setChamados(prev => {
@@ -62,11 +67,12 @@ export default function App() {
         }));
       }
 
-      return next;
+      return next.filter((chamado) => chamado.subprefeituraId === '2');
     });
   };
 
   const handleCriarChamadoViaZap = (novoChamado: Chamado) => {
+    if (novoChamado.subprefeituraId !== '2') return;
     setChamados(prev => [novoChamado, ...prev]);
   };
 
@@ -210,7 +216,7 @@ export default function App() {
                   {chamados.filter(c => c.subprefeituraId === '2').length} Chamados SUB-VM
                 </div>
                 <div className="text-[10px] text-slate-500 tabular-nums">
-                  Total rede municipal: {chamados.length} OS
+                  Total SUB-VM: {chamados.length} OS
                 </div>
               </div>
             </div>

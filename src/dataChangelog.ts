@@ -29,7 +29,7 @@ export const CHANGELOG_DATA_INITIAL: ChangelogItem[] = [
     fase: 'Sprint 10',
     data: '11/09/2026',
     titulo: 'Simulação WhatsApp SP156, Infográfico & Mobile-First',
-    resumo: 'Implementação da simulação do canal de WhatsApp Oficial do SP156 com feedback sonoro, infográfico executivo com funil em 5 fases, matriz analítica das 32 subprefeituras, drawer lateral deslizante e barra de navegação inferior ergonômica para smartphones.',
+    resumo: 'Implementação da simulação do canal de WhatsApp Oficial do SP156 com feedback sonoro, infográfico executivo, matriz analítica distrital da SUB-VM, drawer lateral deslizante e barra de navegação inferior ergonômica para smartphones.',
     destaques: ['Bot SP156 reativo', 'Infográfico Executivo', 'Drawer + Bottom Nav', 'Filtros temporais dinâmicos']
   },
   {

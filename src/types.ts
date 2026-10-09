@@ -173,7 +173,7 @@ export type MapEngineType =
   | 'LEAFLET'            // Leaflet GovTech SP156 (Operacional Padrão)
   | 'MAPLIBRE_GL'        // MapLibre GL Vetorial 3D (GPU de Alta Precisão & Quarteirões)
   | 'SATELITE_ORTOFOTO'  // Satélite & Ortofoto Híbrida de Alta Resolução (Esri / GeoSampa)
-  | 'CHOROPLETH_32_SUBS' // Análise Territorial das 32 Subprefeituras (Polígonos Reais & Indicadores)
+  | 'CHOROPLETH_32_SUBS' // Análise Territorial da SUB-VM (polígono oficial e indicadores)
   | 'SERVICE_BUFFERS'    // Cobertura Operacional & Buffers de Acessibilidade (Polos Cívicos & Bases)
   | 'HEATMAP_KERNEL'     // Mapa de Calor & Densidade Kernel (KDE Interativo)
   // Legado para compatibilidade retroativa

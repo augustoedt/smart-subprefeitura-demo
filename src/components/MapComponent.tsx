@@ -8,7 +8,7 @@ import { renderToString } from 'react-dom/server';
 import { 
   TreeDeciduous, Droplets, User, Megaphone, Hammer, ShieldAlert, Truck, AlertTriangle,
   Shield, Users as UsersIcon, Car, History, Clock, MapPin, AlertCircle, Info, BookOpen,
-  Building2, Radio, CheckCircle2, Flame, BarChart3, Layers, Compass, Crosshair,
+  Building2, Radio, CheckCircle2, Flame, BarChart3, Layers,
   RotateCcw, Navigation, Maximize2, Sparkles, ChevronDown
 } from 'lucide-react';
 import { Chamado, Subprefeitura, FonteDadosPublica, PontoFontePublica, HotspotCruzamento, MapEngineType, BibliotecaPublicaGeolocalizada } from '../types';
@@ -17,25 +17,9 @@ import { METRICAS_SUBPREFEITURAS_SP } from '../dataRegioes';
 import { loadSubprefeituraPolygons, SubprefeituraPolygons } from '../subprefeituraBoundaries';
 import { BIBLIOTECAS_PUBLICAS_SP } from '../dataLayerMapping';
 
-// Presets de Articulação e Navegação Rápida da Cidade de São Paulo
-export interface CameraPreset {
-  id: string;
-  nome: string;
-  sigla: string;
-  center: [number, number];
-  zoom: number;
-}
-
-export const SP_CAMERA_PRESETS: CameraPreset[] = [
-  { id: 'sub-vm', nome: 'Subprefeitura Vila Mariana (SUB-VM)', sigla: '★ Vila Mariana', center: [-23.5855, -46.6323], zoom: 14 },
-  { id: 'sp-geral', nome: 'Geral SP (Metrópole)', sigla: 'Geral SP', center: [-23.5505, -46.6333], zoom: 11 },
-  { id: 'centro', nome: 'Centro Histórico (Sé / República)', sigla: 'Centro', center: [-23.5489, -46.6388], zoom: 14.5 },
-  { id: 'paulista', nome: 'Av. Paulista / Jardins', sigla: 'Paulista', center: [-23.5617, -46.6560], zoom: 14.5 },
-  { id: 'zona-sul', nome: 'Zona Sul (Santo Amaro / Socorro)', sigla: 'Z. Sul', center: [-23.6528, -46.7088], zoom: 12.5 },
-  { id: 'zona-leste', nome: 'Zona Leste (Itaquera / Mooca)', sigla: 'Z. Leste', center: [-23.5325, -46.5411], zoom: 12.5 },
-  { id: 'zona-oeste', nome: 'Zona Oeste (Pinheiros / Butantã)', sigla: 'Z. Oeste', center: [-23.5670, -46.7011], zoom: 13 },
-  { id: 'zona-norte', nome: 'Zona Norte (Santana / Cantareira)', sigla: 'Z. Norte', center: [-23.4988, -46.6267], zoom: 12.5 },
-];
+const BIBLIOTECAS_SUB_VM = BIBLIOTECAS_PUBLICAS_SP.filter(
+  (biblioteca) => biblioteca.subprefeituraId === '2'
+);
 
 // Custom icon para chamados de zeladoria
 const createCustomIcon = (chamado: Chamado, highContrast: boolean = false) => {
@@ -190,18 +174,15 @@ function MapController({
   selectedChamadoId,
   selectedChamadoCoords,
   selectedSubId,
-  selectedSubCoords,
-  presetTrigger
+  selectedSubCoords
 }: { 
   selectedChamadoId?: string;
   selectedChamadoCoords?: [number, number];
   selectedSubId?: string;
   selectedSubCoords?: [number, number];
-  presetTrigger?: { center: [number, number]; zoom: number; timestamp: number } | null;
 }) {
   const map = useMap();
   const lastTargetKeyRef = useRef<string>('init');
-  const lastPresetTimestampRef = useRef<number>(0);
 
   // Resize handler para garantir fluidez ao colapsar/expandir painéis
   useEffect(() => {
@@ -220,15 +201,7 @@ function MapController({
   }, [map]);
 
   useEffect(() => {
-    // 1. Disparo explícito de preset de câmera
-    if (presetTrigger && presetTrigger.timestamp !== lastPresetTimestampRef.current) {
-      lastPresetTimestampRef.current = presetTrigger.timestamp;
-      lastTargetKeyRef.current = `preset-${presetTrigger.timestamp}`;
-      map.flyTo(presetTrigger.center, presetTrigger.zoom, { animate: true, duration: 1.1 });
-      return;
-    }
-
-    // 2. Seleção de chamado individual
+    // 1. Seleção de chamado individual
     if (selectedChamadoId && selectedChamadoCoords) {
       const key = `chamado-${selectedChamadoId}`;
       if (lastTargetKeyRef.current !== key) {
@@ -238,7 +211,7 @@ function MapController({
       return;
     }
 
-    // 3. Seleção de subprefeitura
+    // 2. Enquadramento territorial da SUB-VM
     if (selectedSubId && selectedSubCoords) {
       const key = `sub-${selectedSubId}`;
       if (lastTargetKeyRef.current !== key) {
@@ -248,12 +221,12 @@ function MapController({
       return;
     }
 
-    // 4. Retorno ao geral se ambos forem desmarcados
-    if (!selectedChamadoId && !selectedSubId && lastTargetKeyRef.current !== 'default-sp' && lastTargetKeyRef.current !== 'init') {
-      lastTargetKeyRef.current = 'default-sp';
-      map.flyTo([-23.5505, -46.6333], 11, { animate: true, duration: 0.9 });
+    // 3. Retorno ao enquadramento da SUB-VM.
+    if (!selectedChamadoId && !selectedSubId && lastTargetKeyRef.current !== 'default-sub-vm' && lastTargetKeyRef.current !== 'init') {
+      lastTargetKeyRef.current = 'default-sub-vm';
+      map.flyTo([-23.5855, -46.6323], 13.5, { animate: true, duration: 0.9 });
     }
-  }, [selectedChamadoId, selectedChamadoCoords, selectedSubId, selectedSubCoords, presetTrigger, map]);
+  }, [selectedChamadoId, selectedChamadoCoords, selectedSubId, selectedSubCoords, map]);
 
   return null;
 }
@@ -293,23 +266,6 @@ export default function MapComponent({
   crossAnalysisActive = false,
   hotspotsCruzamento = []
 }: MapComponentProps) {
-  // Preset de navegação ativo
-  const [activePreset, setActivePreset] = useState<string>('sp-geral');
-  const [presetTrigger, setPresetTrigger] = useState<{ center: [number, number]; zoom: number; timestamp: number } | null>(null);
-
-  const handleApplyPreset = (preset: CameraPreset) => {
-    setActivePreset(preset.id);
-    setPresetTrigger({
-      center: preset.center,
-      zoom: preset.zoom,
-      timestamp: Date.now()
-    });
-  };
-
-  const handleRecenter = () => {
-    handleApplyPreset(SP_CAMERA_PRESETS[0]);
-  };
-
   const selectedChamadoCoords = useMemo<[number, number] | undefined>(() => {
     return selectedChamado ? [selectedChamado.lat, selectedChamado.lng] : undefined;
   }, [selectedChamado?.lat, selectedChamado?.lng]);
@@ -445,7 +401,7 @@ export default function MapComponent({
     return map;
   }, []);
 
-  // Cores dinâmicas para polígonos das 32 Subprefeituras
+  // Cor dinâmica para o polígono oficial da SUB-VM
   const getSubprefeituraColor = (subId: string) => {
     const met = metricasPorSubId.get(subId);
     if (!met) return '#64748b';
@@ -486,8 +442,8 @@ export default function MapComponent({
       highContrastMode ? 'border-slate-800 bg-slate-950' : 'border-slate-200 bg-slate-100'
     }`}>
       <MapContainer
-        center={[-23.5505, -46.6333]}
-        zoom={11}
+        center={[-23.5855, -46.6323]}
+        zoom={13.5}
         style={{ width: '100%', height: '100%', zIndex: 0 }}
         zoomControl={false}
         preferCanvas={true}
@@ -519,11 +475,10 @@ export default function MapComponent({
           selectedChamadoCoords={selectedChamadoCoords}
           selectedSubId={selectedSubprefeitura?.id}
           selectedSubCoords={selectedSubCoords}
-          presetTrigger={presetTrigger}
         />
         
         {/* ============================================================ */}
-        {/* MOTOR 4: POLÍGONOS COROPLÉTICOS DAS 32 SUBPREFEITURAS DE SP */}
+        {/* MOTOR 4: POLÍGONO COROPLÉTICO OFICIAL DA SUB-VM */}
         {/* ============================================================ */}
         {isChoroplethMode && Object.entries(subprefeituraPolygons).map(([subId, coords]) => {
           const met = metricasPorSubId.get(subId);
@@ -591,7 +546,7 @@ export default function MapComponent({
         {/* ============================================================ */}
         {/* MOTOR 5: BUFFERS CONCÊNTRICOS & POLOS CÍVICOS (BIBLIOTECAS)  */}
         {/* ============================================================ */}
-        {isBuffersMode && BIBLIOTECAS_PUBLICAS_SP.map((bib) => {
+        {isBuffersMode && BIBLIOTECAS_SUB_VM.map((bib) => {
           // Contagem de chamados abrangidos pelo buffer de 500m
           const chamadosNoRaio = chamados.filter(c => {
             const dLat = (c.lat - bib.lat) * 111320;
@@ -760,7 +715,7 @@ export default function MapComponent({
             </div>
             <div>
               <div className="text-xs font-bold leading-tight">
-                {isChoroplethMode ? 'Coroplético 32 Subprefeituras' :
+                {isChoroplethMode ? 'Território Oficial SUB-VM' :
                  isBuffersMode ? 'Buffers & Polos Cívicos' :
                  isSatelliteMode ? 'Satélite & Ortofoto Híbrida' :
                  isHeatmapEngine ? 'Heatmap Kernel KDE' :
@@ -769,11 +724,11 @@ export default function MapComponent({
               <div className="text-[10px] text-slate-400">
                 {isChoroplethMode
                   ? boundaryLoadState === 'loading'
-                    ? 'Carregando 32 limites territoriais…'
+                    ? 'Carregando limite territorial da SUB-VM…'
                     : boundaryLoadState === 'error'
                       ? 'Falha ao carregar limites territoriais'
                       : `${Object.keys(subprefeituraPolygons).length} polígonos territoriais oficiais`
-                  : isBuffersMode ? `${BIBLIOTECAS_PUBLICAS_SP.length} bibliotecas municipais` :
+                  : isBuffersMode ? `${BIBLIOTECAS_SUB_VM.length} equipamentos culturais` :
                  isSatelliteMode ? 'Esri World Imagery + Esri Referências' :
                  isHeatmapEngine ? `${heatPoints.length} pontos de calor` :
                  `${chamados.length} ordens georreferenciadas`}
@@ -790,7 +745,7 @@ export default function MapComponent({
           <div className="pointer-events-auto bg-white/95 backdrop-blur-md text-slate-900 border border-slate-200 rounded-xl p-2.5 shadow-md text-xs space-y-1.5">
             <div className="flex items-center justify-between font-bold text-[11px] text-slate-700 pb-1 border-b border-slate-100">
               <span>Eficiência de SLA (IEZ)</span>
-              <span className="text-[10px] text-slate-400">32 Subs</span>
+              <span className="text-[10px] text-slate-400">SUB-VM</span>
             </div>
             <div className="grid grid-cols-2 gap-1 text-[10px]">
               <div className="flex items-center gap-1.5">
@@ -876,43 +831,6 @@ export default function MapComponent({
         )}
       </div>
 
-      {/* Dock Flutuante de Articulação e Presets de Navegação Rápida (Topo Central / Direito) */}
-      <div className="absolute top-3 right-3 z-[400] flex items-center gap-1.5 pointer-events-none">
-        <div className="pointer-events-auto flex items-center gap-1 bg-slate-900/90 backdrop-blur-md p-1 rounded-xl border border-slate-700/80 shadow-xl text-xs text-white">
-          <div className="flex items-center gap-1 px-2 py-1 text-[11px] font-bold text-slate-300 border-r border-slate-700/80 hidden md:flex">
-            <Compass className="w-3.5 h-3.5 text-sky-400" />
-            <span>Vistas</span>
-          </div>
-
-          <div className="flex items-center gap-1 overflow-x-auto max-w-[420px] scrollbar-none py-0.5 px-0.5">
-            {SP_CAMERA_PRESETS.map((preset) => {
-              const isActive = activePreset === preset.id;
-              return (
-                <button
-                  key={preset.id}
-                  onClick={() => handleApplyPreset(preset)}
-                  className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-all whitespace-nowrap ${
-                    isActive
-                      ? 'bg-blue-600 text-white shadow-sm ring-1 ring-blue-400 font-bold'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800'
-                  }`}
-                  title={`Navegar suavemente para: ${preset.nome}`}
-                >
-                  {preset.sigla}
-                </button>
-              );
-            })}
-          </div>
-
-          <button
-            onClick={handleRecenter}
-            className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg border-l border-slate-700/80 transition-colors ml-0.5"
-            title="Recentralizar para São Paulo (Visão Geral)"
-          >
-            <Crosshair className="w-3.5 h-3.5 text-emerald-400" />
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

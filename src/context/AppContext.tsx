@@ -35,17 +35,17 @@ export const MOTORES_DISPONIVEIS: MapEngineInfo[] = [
   },
   {
     id: 'CHOROPLETH_32_SUBS',
-    nome: 'Análise 32 Subprefeituras',
-    biblioteca: 'Polígonos Geográficos & Temas Dinâmicos',
-    descricao: 'Mapeamento territorial dos limites reais das 32 subprefeituras com escala de cores por volume, % SLA e tempo de resposta.',
+    nome: 'Análise Territorial SUB-VM',
+    biblioteca: 'Polígono Oficial & Temas Dinâmicos',
+    descricao: 'Mapeamento do limite oficial da Subprefeitura Vila Mariana com indicadores de volume, SLA e tempo de resposta.',
     icone: 'BarChart3',
-    badge: 'Territorial 32 Subs'
+    badge: 'Territorial SUB-VM'
   },
   {
     id: 'SERVICE_BUFFERS',
     nome: 'Cobertura & Buffers Cívicos',
     biblioteca: 'Service Area Topology & Buffer Analysis',
-    descricao: 'Análise espacial de raios de atendimento (500m a 3km) ao redor das 10 Bibliotecas Públicas e bases de zeladoria.',
+    descricao: 'Análise espacial de raios de atendimento na rede de equipamentos públicos da jurisdição SUB-VM.',
     icone: 'Radio',
     badge: 'Raios de Cobertura'
   },
@@ -117,9 +117,30 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const BIBLIOTECAS_SUB_VM = BIBLIOTECAS_PUBLICAS_SP.filter(
+  (biblioteca) => biblioteca.subprefeituraId === '2'
+);
+
+const FONTES_PUBLICAS_SUB_VM = CATALOGO_FONTES_PUBLICAS.map((fonte) => {
+  const pontos = fonte.pontos.filter((ponto) => ponto.subprefeituraId === '2');
+  return { ...fonte, pontos, totalRegistros: pontos.length };
+});
+
+const CAMADAS_SUB_VM = CATALOGO_CAMADAS_MAPEADAS.map((camada) =>
+  camada.id === 'layer-bibliotecas-sp'
+    ? {
+        ...camada,
+        nome: 'Bibliotecas & Equipamentos Culturais da SUB-VM',
+        descricao: 'Equipamentos públicos localizados na jurisdição da Subprefeitura Vila Mariana.',
+        totalElementos: BIBLIOTECAS_SUB_VM.length,
+        itensDetalhados: BIBLIOTECAS_SUB_VM
+      }
+    : camada
+);
+
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [publicSources, setPublicSources] = useState<FonteDadosPublica[]>(CATALOGO_FONTES_PUBLICAS);
-  const [camadasMapeadas, setCamadasMapeadas] = useState<CamadaMapeada[]>(CATALOGO_CAMADAS_MAPEADAS);
+  const [publicSources, setPublicSources] = useState<FonteDadosPublica[]>(FONTES_PUBLICAS_SUB_VM);
+  const [camadasMapeadas, setCamadasMapeadas] = useState<CamadaMapeada[]>(CAMADAS_SUB_VM);
   const [selectedBiblioteca, setSelectedBiblioteca] = useState<BibliotecaPublicaGeolocalizada | null>(null);
   const [activeMapEngine, setActiveMapEngine] = useState<MapEngineType>('LEAFLET');
   const [crossAnalysisActive, setCrossAnalysisActive] = useState<boolean>(false);
@@ -217,7 +238,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setOpacidadeCamada,
         setCamadaAtiva,
         isCamadaAtiva,
-        bibliotecasPublicas: BIBLIOTECAS_PUBLICAS_SP,
+        bibliotecasPublicas: BIBLIOTECAS_SUB_VM,
         selectedBiblioteca,
         setSelectedBiblioteca,
         activeMapEngine,

@@ -39,20 +39,20 @@ export const MOCK_CONVERSA_INICIAL: ZapChatSession = {
     {
       id: 'msg-02',
       remetente: 'CIDADAO',
-      texto: 'Bom dia! Tem um buraco enorme na pista aqui na Rua da Mooca, altura do número 1200.',
+      texto: 'Bom dia! Tem um buraco enorme na pista aqui na Av. Moema, altura do número 1200.',
       timestamp: '10:15',
       statusEnvio: 'LIDO',
     },
     {
       id: 'msg-03',
       remetente: 'BOT_SP156',
-      texto: 'Entendi perfeitamente! Identifiquei que se trata de uma solicitação de **Tapa-Buraco / Pavimentação Asfáltica** para a **Subprefeitura da Mooca**.\n\nVocê tem uma foto do local para anexar à ordem de serviço?',
+      texto: 'Entendi perfeitamente! Identifiquei que se trata de uma solicitação de **Tapa-Buraco / Pavimentação Asfáltica** para a **Subprefeitura Vila Mariana — Distrito Moema**.\n\nVocê tem uma foto do local para anexar à ordem de serviço?',
       timestamp: '10:15',
       statusEnvio: 'LIDO',
       tipoAnexo: 'BOTAO_ACAO',
       anexoDados: {
         categoria: 'TAPA_BURACO',
-        subprefeituraNome: 'Mooca',
+        subprefeituraNome: 'Vila Mariana',
         prazoHoras: 24
       },
       opcoesRespostaRapida: [
