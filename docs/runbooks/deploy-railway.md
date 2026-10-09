@@ -10,6 +10,7 @@ Publicar a aplicação deste diretório na Railway e verificar se o deploy está
 
 - CLI Railway instalada e autenticada na conta com acesso ao projeto `subprefeitura`.
 - Projeto e serviço de aplicação chamados `subprefeitura`, no ambiente `production`.
+- Serviço conectado ao repositório `augustoedt/smart-subprefeitura-demo`, acompanhando a branch `feature/vila-mariana-only`.
 - O servidor Express em `server.ts` escuta em `0.0.0.0:3000`; a porta pública do serviço deve encaminhar para `3000`.
 - `npm run build` gera os artefatos de produção e `npm start` inicia `dist/server.cjs`.
 - A integração de análise de imagem depende de `GEMINI_API_KEY`, configurada em **Railway → serviço `subprefeitura` → Variables**. Não registre o valor do segredo neste documento.
@@ -31,13 +32,15 @@ Publicar a aplicação deste diretório na Railway e verificar se o deploy está
    railway status --json
    ```
 
-3. Envie a versão local para produção:
+3. Publique a branch acompanhada pelo serviço. O push dispara o deployment automaticamente:
 
    ```bash
-   railway up --service subprefeitura --environment production --detach -m "Resumo da publicação"
+   git push origin feature/vila-mariana-only
    ```
 
-4. O modo `--detach` confirma o envio, não a conclusão. Acompanhe o deploy e só considere a publicação concluída quando o deployment correspondente estiver `SUCCESS`:
+   Para uma publicação manual excepcional, ainda é possível usar `railway up --service subprefeitura --environment production --detach -m "Resumo da publicação"`.
+
+4. Tanto o push quanto o modo `--detach` apenas iniciam o processo. Acompanhe o deploy e só considere a publicação concluída quando o deployment correspondente estiver `SUCCESS`:
 
    ```bash
    railway deployment list --service subprefeitura --environment production --json
@@ -64,5 +67,5 @@ Em 2026-10-08, `npm run lint` e `npm run build` passaram, o deployment atingiu `
 ## Não fazer
 
 - Não alterar a porta 3000 nem o bind `0.0.0.0` sem revisar as instruções do projeto.
-- Não afirmar sucesso com base apenas no upload; confirmar o status `SUCCESS` do deployment enviado.
+- Não afirmar sucesso com base apenas no push ou upload; confirmar o status `SUCCESS` do deployment correspondente.
 - Não registrar `GEMINI_API_KEY` ou outros segredos em arquivos versionados ou logs.

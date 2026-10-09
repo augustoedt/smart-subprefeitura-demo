@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { subprefeituras } from '../data';
 import { UserSession } from '../LoginTypes';
 import { 
   Users, 
@@ -103,7 +102,7 @@ const shelterIcon = L.divIcon({
   iconAnchor: [8, 8],
 });
 
-// Rede Real de Equipamentos Socioassistenciais da PMSP (Vila Mariana / Moema / Saúde / Central)
+// Rede de equipamentos socioassistenciais da jurisdição SUB-VM
 const UNIDADES_ACOLHIMENTO_MOCK: UnidadeAcolhimento[] = [
   {
     id: 'cta-13-vm',
@@ -130,19 +129,6 @@ const UNIDADES_ACOLHIMENTO_MOCK: UnidadeAcolhimento[] = [
     perfilPublico: 'Famílias com Crianças e Mulheres Vítimas de Violência',
     statusPlantao: 'ABERTO_24H',
     telefone: '(11) 5051-8890'
-  },
-  {
-    id: 'cta-09-brig',
-    nome: 'CTA 09 — Brigadeiro / Bela Vista',
-    tipo: 'CTA',
-    endereco: 'Av. Brigadeiro Luís Antônio, 1200',
-    bairro: 'Bela Vista',
-    capacidadeTotal: 160,
-    vagasLivres: 28,
-    vagasPets: 6,
-    perfilPublico: 'População Adulta Geral • Acolhimento Humanizado',
-    statusPlantao: 'ABERTO_24H',
-    telefone: '(11) 3284-9011'
   },
   {
     id: 'cras-vm',
@@ -259,28 +245,6 @@ const INITIAL_CREDENCIADOS: Credenciado[] = [
     possuiPet: false,
     tempoEmSituacaoRua: 'Recém-desalojada (1 mês)',
     historico: generateMockHistorico(3, '2')
-  },
-  {
-    codigo: 'SOC-2026-5890',
-    nomeFicticio: 'Fernando A. (Nando)',
-    subprefeituraFrequenteId: '3', // Mooca
-    numeroAbordagens: 5,
-    statusAtual: 'RECUSOU_ATENDIMENTO',
-    statusCriminal: 'CUMPRIDO',
-    possuiPet: true,
-    tempoEmSituacaoRua: '2 anos',
-    historico: generateMockHistorico(5, '3')
-  },
-  {
-    codigo: 'SOC-2026-6102',
-    nomeFicticio: 'Antônio B. (Maranhão)',
-    subprefeituraFrequenteId: '1', // Sé
-    numeroAbordagens: 12,
-    statusAtual: 'ABORDADO_EM_RUA',
-    statusCriminal: 'NADA_CONSTA',
-    possuiPet: false,
-    tempoEmSituacaoRua: 'Mais de 5 anos',
-    historico: generateMockHistorico(12, '1')
   }
 ];
 
@@ -316,7 +280,7 @@ export default function ModuloSocial({ session }: { session: UserSession }) {
   const [filtroAlertaSeguranca, setFiltroAlertaSeguranca] = useState(false);
 
   // Formulário Nova Abordagem
-  const [formSubId, setFormSubId] = useState<string>(session.role === 'GESTOR' ? session.subprefeituraId : '2');
+  const formSubId = '2';
   const [formLocal, setFormLocal] = useState('Viaduto Tutóia x Av. 23 de Maio');
   const [formNomeFicticio, setFormNomeFicticio] = useState('');
   const [formResultado, setFormResultado] = useState<StatusAbordagem>('ENCAMINHADO_ABRIGO');
@@ -337,7 +301,7 @@ export default function ModuloSocial({ session }: { session: UserSession }) {
   // Filtragem da Base de Pessoas
   const credenciadosFiltrados = useMemo(() => {
     return credenciados.filter(c => {
-      if (session.role === 'GESTOR' && c.subprefeituraFrequenteId !== session.subprefeituraId) {
+      if (c.subprefeituraFrequenteId !== '2') {
         return false;
       }
       if (filtroStatus !== 'TODOS' && c.statusAtual !== filtroStatus) {
@@ -354,7 +318,7 @@ export default function ModuloSocial({ session }: { session: UserSession }) {
       }
       return true;
     });
-  }, [credenciados, session, filtroStatus, filtroAlertaSeguranca, filtroTexto]);
+  }, [credenciados, filtroStatus, filtroAlertaSeguranca, filtroTexto]);
 
   // Submissão do Formulário de Nova Abordagem
   const handleNovaAbordagemSubmit = (e: React.FormEvent) => {
@@ -459,9 +423,7 @@ export default function ModuloSocial({ session }: { session: UserSession }) {
   const mockDadosGrafico = [
     { name: 'Vila Mariana', semanaAnterior: 32, semanaAtual: 44 },
     { name: 'Moema', semanaAnterior: 18, semanaAtual: 21 },
-    { name: 'Saúde', semanaAnterior: 14, semanaAtual: 19 },
-    { name: 'Ipiranga', semanaAnterior: 22, semanaAtual: 25 },
-    { name: 'Sé', semanaAnterior: 65, semanaAtual: 58 }
+    { name: 'Saúde', semanaAnterior: 14, semanaAtual: 19 }
   ];
 
   const toggleDemanda = (item: string) => {
@@ -620,17 +582,10 @@ export default function ModuloSocial({ session }: { session: UserSession }) {
 
               <form onSubmit={handleNovaAbordagemSubmit} className="space-y-3 sm:space-y-3.5 text-xs">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Subprefeitura da Ação</label>
-                  <select 
-                    value={formSubId}
-                    onChange={(e) => setFormSubId(e.target.value)}
-                    className="w-full border border-slate-300 rounded-xl px-3 py-2 bg-slate-50 focus:ring-2 focus:ring-emerald-500"
-                    disabled={session.role === 'GESTOR'}
-                  >
-                    {subprefeituras.map(sub => (
-                      <option key={sub.id} value={sub.id}>{sub.nome}</option>
-                    ))}
-                  </select>
+                  <span className="block font-bold text-slate-700 mb-1">Subprefeitura da Ação</span>
+                  <div className="w-full border border-slate-300 rounded-xl px-3 py-2 bg-slate-50 text-slate-800 font-semibold">
+                    Vila Mariana • SUB-VM
+                  </div>
                 </div>
 
                 <div>
@@ -827,7 +782,7 @@ export default function ModuloSocial({ session }: { session: UserSession }) {
                           </div>
                         </td>
                         <td className="px-4 py-3 font-medium text-slate-600">
-                          {subprefeituras.find(s => s.id === cred.subprefeituraFrequenteId)?.nome}
+                          Vila Mariana
                         </td>
                         <td className="px-4 py-3 text-center">
                           <span className="bg-slate-100 text-slate-800 font-bold px-2 py-0.5 rounded-full text-xs">

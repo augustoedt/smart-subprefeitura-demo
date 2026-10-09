@@ -12,9 +12,6 @@ import {
 import CanalWhatsApp from './CanalWhatsApp';
 import { AnimatedCounter } from './AnimatedCounter';
 import { LiveIndicator } from './LiveIndicator';
-import { BlocoComparativo } from './BlocoComparativo';
-import InfograficoExecutivo from './InfograficoExecutivo';
-import ComparativoRegioes from './ComparativoRegioes';
 import CockpitDecisaoBairros from './CockpitDecisaoBairros';
 import { BAIRROS_SUB_VILA_MARIANA } from '../data';
 import BrasaoSaoPaulo from './BrasaoSaoPaulo';
@@ -1120,7 +1117,7 @@ export default function PainelAdmin({ chamados, setChamados, session }: PainelAd
                     RELATÓRIO OFICIAL SP156
                   </div>
                   <p className="text-xs font-semibold text-slate-700">
-                    Jurisdição: {session.role === 'GESTOR' ? (subprefeituras.find(s => s.id === session.subprefeituraId)?.nome || 'Vila Mariana') : 'Consolidado Rede PMSP'}
+                    Jurisdição: Subprefeitura Vila Mariana • Vila Mariana, Moema e Saúde
                   </p>
                   <p className="text-[10px] text-slate-400 mt-1">
                     Emissão: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}

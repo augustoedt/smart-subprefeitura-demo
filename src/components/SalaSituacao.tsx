@@ -1,16 +1,17 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   Camera, Map as MapIcon, Layers, Filter, CheckCircle2, AlertTriangle, Clock, Calendar, 
-  Hash, MapPin, X, Flame, Eye, EyeOff, LayoutTemplate, Activity, BarChart3, List,
-  Plus, Database, Shield, Users, Car, History, Sparkles, Monitor, Info, Check, SlidersHorizontal,
-  Radio, Hexagon, Globe, BookOpen, Mountain, ChevronRight, ChevronLeft, ChevronDown, Sliders
+  Hash, MapPin, X, Eye, EyeOff, Activity, BarChart3, List,
+  Plus, Database, Shield, Users, Car, History, Sparkles, Info, Check, SlidersHorizontal,
+  Radio, Hexagon, Globe, BookOpen, Mountain, ChevronRight, ChevronLeft, ChevronDown, Sliders,
+  Maximize2, Minimize2, Compass, RotateCcw
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { subprefeituras } from '../data';
-import { Chamado, Subprefeitura, FonteDadosPublica, PontoFontePublica, HotspotCruzamento, BibliotecaPublicaGeolocalizada } from '../types';
+import { Chamado, Subprefeitura, FonteDadosPublica, PontoFontePublica, HotspotCruzamento, BibliotecaPublicaGeolocalizada, MapEngineType } from '../types';
 import { UserSession } from '../LoginTypes';
 import MapComponent from './MapComponent';
-import MapLibreMapComponent from './MapLibreMapComponent';
+import MapLibreMapComponent, { MapLibreStyleMode } from './MapLibreMapComponent';
 import DeckGlMapComponent from './DeckGlMapComponent';
 import D3MapComponent from './D3MapComponent';
 import HexbinMapComponent from './HexbinMapComponent';
@@ -23,8 +24,69 @@ import { LiveIndicator } from './LiveIndicator';
 import { CATALOGO_FONTES_PUBLICAS, ROTULO_FIXO_FONTE } from '../dataPublicSources';
 import { useApp } from '../context/AppContext';
 import { executarCruzamentoCamadas } from '../utils/geoSpatial';
+import ControlDropdown from './ui/ControlDropdown';
+import MapControlsMegaMenu from './ui/MapControlsMegaMenu';
 
 type LayerFilter = 'SOCIAL' | 'ZELADORIA' | 'INFRAESTRUTURA' | 'TODOS';
+type DistrictFilter = 'TODOS' | 'Vila Mariana' | 'Moema' | 'Saúde';
+type OccurrenceViewMode = 'CLUSTER' | 'NORMAL';
+type DemoMapEngine = Extract<
+  MapEngineType,
+  'LEAFLET' | 'MAPLIBRE_GL' | 'SATELITE_ORTOFOTO' | 'CHOROPLETH_32_SUBS' | 'SERVICE_BUFFERS' | 'HEATMAP_KERNEL'
+>;
+
+interface MapEngineControlConfig {
+  shortLabel: string;
+  description: string;
+  occurrenceControl: 'CONFIGURABLE' | 'DEFINED_BY_ENGINE';
+  blindSpots: boolean;
+}
+
+const MAP_ENGINE_CONTROL_CONFIG: Record<DemoMapEngine, MapEngineControlConfig> = {
+  LEAFLET: {
+    shortLabel: 'OSM',
+    description: 'Marcadores e agrupamentos operacionais.',
+    occurrenceControl: 'CONFIGURABLE',
+    blindSpots: true
+  },
+  MAPLIBRE_GL: {
+    shortLabel: '3D',
+    description: 'Mapa vetorial com rotação e perspectiva.',
+    occurrenceControl: 'DEFINED_BY_ENGINE',
+    blindSpots: false
+  },
+  SATELITE_ORTOFOTO: {
+    shortLabel: 'Satélite',
+    description: 'Imagem aérea com vias e logradouros.',
+    occurrenceControl: 'DEFINED_BY_ENGINE',
+    blindSpots: true
+  },
+  CHOROPLETH_32_SUBS: {
+    shortLabel: 'Territorial',
+    description: 'Limite da SUB-VM e indicadores.',
+    occurrenceControl: 'DEFINED_BY_ENGINE',
+    blindSpots: true
+  },
+  SERVICE_BUFFERS: {
+    shortLabel: 'Buffers',
+    description: 'Raios de cobertura de equipamentos.',
+    occurrenceControl: 'DEFINED_BY_ENGINE',
+    blindSpots: true
+  },
+  HEATMAP_KERNEL: {
+    shortLabel: 'Calor',
+    description: 'Densidade espacial de ocorrências.',
+    occurrenceControl: 'DEFINED_BY_ENGINE',
+    blindSpots: true
+  }
+};
+
+const FALLBACK_ENGINE_CONFIG: MapEngineControlConfig = {
+  shortLabel: 'Mapa',
+  description: 'Visualização cartográfica.',
+  occurrenceControl: 'DEFINED_BY_ENGINE',
+  blindSpots: false
+};
 
 const LAYER_MAPPING: Record<LayerFilter, string[]> = {
   SOCIAL: ['MORADOR_RUA', 'DESFAZIMENTO'],
@@ -34,13 +96,14 @@ const LAYER_MAPPING: Record<LayerFilter, string[]> = {
 };
 
 export default function SalaSituacao({ chamados, session }: { chamados: Chamado[], session: UserSession }) {
-  const [viewMode, setViewMode] = useState<'HEATMAP' | 'CLUSTER' | 'NORMAL' | 'LISTA' | 'COMPARACAO'>('CLUSTER');
+  const [viewMode, setViewMode] = useState<OccurrenceViewMode>('CLUSTER');
   const [showPontosCegos, setShowPontosCegos] = useState(false);
-  const [compareSubId, setCompareSubId] = useState<string>('ALL');
+  const [isListOpen, setIsListOpen] = useState(false);
   
   const [activeLayer, setActiveLayer] = useState<LayerFilter>('TODOS');
-  const [heatmapType, setHeatmapType] = useState<'DENSIDADE' | 'CRITICIDADE'>('DENSIDADE');
-  const [selectedSubId, setSelectedSubId] = useState<string>(session.role === 'GESTOR' && session.subprefeituraId ? session.subprefeituraId : 'ALL');
+  const heatmapType = 'DENSIDADE' as const;
+  const [selectedDistrict, setSelectedDistrict] = useState<DistrictFilter>('TODOS');
+  const selectedSubId = '2';
   const [selectedChamado, setSelectedChamado] = useState<Chamado | null>(null);
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState<boolean>(true);
   const [focusMode, setFocusMode] = useState(false);
@@ -71,6 +134,37 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
     setHighContrast: setHighContrastMode
   } = useApp();
 
+  const engineControlConfig =
+    MAP_ENGINE_CONTROL_CONFIG[activeMapEngine as DemoMapEngine] || FALLBACK_ENGINE_CONFIG;
+  const occurrenceControlDisabled = engineControlConfig.occurrenceControl !== 'CONFIGURABLE';
+  const occurrenceSummary = occurrenceControlDisabled
+    ? 'Definido pelo mapa'
+    : viewMode === 'CLUSTER'
+      ? 'Agrupadas'
+      : 'Individuais';
+  const panelsSummary = isListOpen && isAnalyticsOpen
+    ? '2 ativos'
+    : isListOpen
+      ? 'Lista'
+      : isAnalyticsOpen
+        ? 'Estatísticas'
+        : 'Fechados';
+  const activeDisplayCount = Number(showPontosCegos && engineControlConfig.blindSpots) + Number(highContrastMode);
+  const displaySummary = activeDisplayCount === 0
+    ? 'Padrão'
+    : activeDisplayCount === 2
+      ? '2 ativos'
+      : showPontosCegos && engineControlConfig.blindSpots
+        ? 'Pontos cegos'
+        : 'Contraste';
+
+  const handleMapEngineSelect = (engine: DemoMapEngine) => {
+    setActiveMapEngine(engine);
+    if (!MAP_ENGINE_CONTROL_CONFIG[engine].blindSpots) {
+      setShowPontosCegos(false);
+    }
+  };
+
   const [isAddSourceOpen, setIsAddSourceOpen] = useState(false);
   const [isCrossPanelOpen, setIsCrossPanelOpen] = useState(false);
   const [isCamadasPanelOpen, setIsCamadasPanelOpen] = useState(false);
@@ -81,11 +175,14 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
   const [isMetricsPanelOpen, setIsMetricsPanelOpen] = useState(true);
   const [isMobileMetricsOpen, setIsMobileMetricsOpen] = useState(false);
   const [isMobileFilterDrawerOpen, setIsMobileFilterDrawerOpen] = useState(false);
+  const [mapLibreStyleMode, setMapLibreStyleMode] = useState<MapLibreStyleMode>('STANDARD');
+  const [mapLibre3DMode, setMapLibre3DMode] = useState(true);
+  const [mapLibreResetVersion, setMapLibreResetVersion] = useState(0);
 
   // Cruzamento Geoespacial Contínuo (Interno SP156 x Externo Fontes Públicas)
   const { hotspots: hotspotsCruzamento, resumo: resumoCruzamento } = useMemo(() => {
     return executarCruzamentoCamadas(
-      chamados,
+      chamados.filter((chamado) => selectedDistrict === 'TODOS' || chamado.distrito === selectedDistrict),
       publicSources,
       {
         raioMetros: crossRadiusMeters,
@@ -93,9 +190,9 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
         fonteExternaId: crossSelectedSourceId,
         apenasAtivas: true
       },
-      selectedSubId !== 'ALL' ? subprefeituras.find(s => s.id === selectedSubId)?.nome : undefined
+      'Vila Mariana'
     );
-  }, [chamados, publicSources, crossRadiusMeters, crossSelectedCategory, crossSelectedSourceId, selectedSubId]);
+  }, [chamados, publicSources, crossRadiusMeters, crossSelectedCategory, crossSelectedSourceId, selectedDistrict]);
 
   // Fontes públicas ativas
   const activePublicSources = useMemo(() => {
@@ -161,10 +258,11 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
   const filteredChamados = useMemo(() => {
     return chamados.filter((c) => {
       const matchLayer = LAYER_MAPPING[activeLayer].includes(c.categoria);
-      const matchSub = selectedSubId === 'ALL' || c.subprefeituraId === selectedSubId;
-      return matchLayer && matchSub;
+      const matchSub = c.subprefeituraId === selectedSubId;
+      const matchDistrict = selectedDistrict === 'TODOS' || c.distrito === selectedDistrict;
+      return matchLayer && matchSub && matchDistrict;
     });
-  }, [activeLayer, selectedSubId, chamados]);
+  }, [activeLayer, selectedDistrict, chamados]);
 
   // Analytics com suporte a variação em tempo real
   const subprefeituraStats = useMemo(() => {
@@ -182,9 +280,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
     });
   }, [filteredChamados, chartDeltas]);
 
-  const selectedSubprefeitura = useMemo(() => {
-    return subprefeituras.find((s) => s.id === selectedSubId) || null;
-  }, [selectedSubId]);
+  const selectedSubprefeitura = subprefeituras[0] || null;
 
   const handleMarkerClick = (chamado: Chamado) => {
     setSelectedChamado(chamado);
@@ -203,61 +299,13 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
     }`}>
       {/* 1. Canvas do Mapa (100% Imersivo de Borda a Borda) */}
       <div className="flex-1 relative w-full h-full overflow-hidden">
-        {viewMode === 'COMPARACAO' ? (
-          <div className="w-full h-full flex flex-col md:flex-row relative overflow-hidden">
-            {/* Split Map Pane 1 */}
-            <div className="flex-1 h-full relative overflow-hidden border-b md:border-b-0 md:border-r border-slate-700/80">
-              <div className="absolute top-16 left-4 z-20 px-3 py-1.5 bg-slate-900/90 text-white rounded-xl border border-slate-700 text-xs font-bold shadow-lg backdrop-blur-md">
-                Mapa Principal: {selectedSubprefeitura?.nome || 'São Paulo (Geral)'}
-              </div>
-              <MapComponent
-                chamados={filteredChamados}
-                viewMode="CLUSTER"
-                showPontosCegos={showPontosCegos}
-                onMarkerClick={handleMarkerClick}
-                selectedSubprefeitura={selectedSubprefeitura}
-                heatmapType={heatmapType}
-                activePublicSources={activePublicSources}
-                highContrastMode={highContrastMode}
-                onPublicPointClick={handlePublicPointClick}
-              />
-            </div>
-            
-            {/* Split Map Pane 2 */}
-            <div className="flex-1 h-full relative overflow-hidden">
-              <div className="absolute top-16 left-4 z-20 px-3 py-1.5 bg-slate-900/90 text-white rounded-xl border border-slate-700 text-xs font-bold shadow-lg backdrop-blur-md flex items-center gap-2">
-                <span className="text-xs font-bold">Comparar com:</span>
-                <select
-                  className="bg-slate-800 border border-slate-600 text-white text-xs font-semibold rounded-lg px-2 py-0.5 outline-none cursor-pointer"
-                  value={compareSubId}
-                  onChange={(e) => setCompareSubId(e.target.value)}
-                >
-                  <option value="ALL">Todas as Subprefeituras</option>
-                  {subprefeituras.map((sub) => (
-                    <option key={sub.id} value={sub.id}>{sub.nome}</option>
-                  ))}
-                </select>
-              </div>
-              <MapComponent
-                chamados={chamados.filter(c => (compareSubId === 'ALL' || c.subprefeituraId === compareSubId) && LAYER_MAPPING[activeLayer].includes(c.categoria))}
-                viewMode="CLUSTER"
-                showPontosCegos={showPontosCegos}
-                onMarkerClick={handleMarkerClick}
-                selectedSubprefeitura={subprefeituras.find(s => s.id === compareSubId) || null}
-                heatmapType={heatmapType}
-                activePublicSources={activePublicSources}
-                highContrastMode={highContrastMode}
-                onPublicPointClick={handlePublicPointClick}
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="w-full h-full relative overflow-hidden">
+        <div className="w-full h-full relative overflow-hidden">
             {activeMapEngine === 'LEAFLET' && (
               <MapComponent
                 chamados={filteredChamados}
                 viewMode={viewMode}
                 mapEngineMode="LEAFLET"
+                showEngineHeader={false}
                 showPontosCegos={showPontosCegos}
                 onMarkerClick={handleMarkerClick}
                 selectedSubprefeitura={selectedSubprefeitura}
@@ -276,12 +324,15 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 chamados={filteredChamados}
                 subprefeituras={subprefeituras}
                 fontesPublicas={publicSources}
-                selectedSubId={selectedSubId === 'ALL' ? null : selectedSubId}
+                selectedSubId={selectedSubId}
                 onSelectChamado={handleMarkerClick}
                 onSelectBiblioteca={(b) => setModalBiblioteca(b)}
                 highContrast={highContrastMode}
                 crossAnalysisActive={crossAnalysisActive}
                 hotspotsCruzamento={hotspotsCruzamento}
+                is3DMode={mapLibre3DMode}
+                styleMode={mapLibreStyleMode}
+                resetOrientationVersion={mapLibreResetVersion}
               />
             )}
 
@@ -290,6 +341,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 chamados={filteredChamados}
                 viewMode="NORMAL"
                 mapEngineMode="SATELITE_ORTOFOTO"
+                showEngineHeader={false}
                 showPontosCegos={showPontosCegos}
                 onMarkerClick={handleMarkerClick}
                 selectedSubprefeitura={selectedSubprefeitura}
@@ -308,6 +360,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 chamados={filteredChamados}
                 viewMode="NORMAL"
                 mapEngineMode="CHOROPLETH_32_SUBS"
+                showEngineHeader={false}
                 showPontosCegos={showPontosCegos}
                 onMarkerClick={handleMarkerClick}
                 selectedSubprefeitura={selectedSubprefeitura}
@@ -316,7 +369,6 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 activePublicSources={activePublicSources}
                 highContrastMode={highContrastMode}
                 onPublicPointClick={handlePublicPointClick}
-                onSelectSubprefeitura={(sub) => setSelectedSubId(sub.id)}
                 crossAnalysisActive={crossAnalysisActive}
                 hotspotsCruzamento={hotspotsCruzamento}
               />
@@ -327,6 +379,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 chamados={filteredChamados}
                 viewMode="NORMAL"
                 mapEngineMode="SERVICE_BUFFERS"
+                showEngineHeader={false}
                 showPontosCegos={showPontosCegos}
                 onMarkerClick={handleMarkerClick}
                 selectedSubprefeitura={selectedSubprefeitura}
@@ -346,6 +399,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 chamados={filteredChamados}
                 viewMode="HEATMAP"
                 mapEngineMode="HEATMAP_KERNEL"
+                showEngineHeader={false}
                 showPontosCegos={showPontosCegos}
                 onMarkerClick={handleMarkerClick}
                 selectedSubprefeitura={selectedSubprefeitura}
@@ -364,7 +418,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 chamados={filteredChamados}
                 subprefeituras={subprefeituras}
                 fontesPublicas={publicSources}
-                selectedSubId={selectedSubId === 'ALL' ? null : selectedSubId}
+                selectedSubId={selectedSubId}
                 onSelectChamado={handleMarkerClick}
                 onSelectBiblioteca={(b) => setModalBiblioteca(b)}
                 highContrast={highContrastMode}
@@ -378,9 +432,9 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 chamados={filteredChamados}
                 subprefeituras={subprefeituras}
                 fontesPublicas={publicSources}
-                selectedSubId={selectedSubId === 'ALL' ? null : selectedSubId}
+                selectedSubId={selectedSubId}
                 onSelectChamado={handleMarkerClick}
-                onSelectSubprefeitura={(sub) => setSelectedSubId(sub.id)}
+                onSelectSubprefeitura={() => undefined}
                 highContrast={highContrastMode}
                 crossAnalysisActive={crossAnalysisActive}
                 hotspotsCruzamento={hotspotsCruzamento}
@@ -392,7 +446,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 chamados={filteredChamados}
                 subprefeituras={subprefeituras}
                 fontesPublicas={publicSources}
-                selectedSubId={selectedSubId === 'ALL' ? null : selectedSubId}
+                selectedSubId={selectedSubId}
                 onSelectChamado={handleMarkerClick}
                 highContrast={highContrastMode}
                 crossAnalysisActive={crossAnalysisActive}
@@ -405,7 +459,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 chamados={filteredChamados}
                 subprefeituras={subprefeituras}
                 fontesPublicas={publicSources}
-                selectedSubId={selectedSubId === 'ALL' ? null : selectedSubId}
+                selectedSubId={selectedSubId}
                 onSelectChamado={handleMarkerClick}
                 highContrast={highContrastMode}
                 crossAnalysisActive={crossAnalysisActive}
@@ -413,30 +467,28 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
               />
             )}
             
-            {/* Mobile Toggle Pill for Legend */}
-            {!focusMode && (
-              <div className="sm:hidden absolute bottom-3 left-3 z-[999]">
+            {/* Botão compacto para restaurar a legenda minimizada */}
+            {!focusMode && !isLegendExpanded && (
+              <div className="absolute bottom-16 left-3 z-[35] sm:left-4">
                 <button
-                  onClick={() => setIsLegendExpanded(!isLegendExpanded)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border shadow-lg flex items-center gap-1.5 backdrop-blur-md transition-all ${
-                    isLegendExpanded
-                      ? 'bg-blue-600 text-white border-blue-700'
-                      : highContrastMode
-                      ? 'bg-slate-900/90 text-amber-400 border-slate-700'
-                      : 'bg-white/90 text-slate-800 border-slate-200'
+                  type="button"
+                  onClick={() => setIsLegendExpanded(true)}
+                  className={`btn btn-sm btn-square min-h-9 h-9 w-9 border shadow-lg backdrop-blur-md ${
+                    highContrastMode
+                      ? 'border-slate-700 bg-slate-900/90 text-amber-400 hover:bg-slate-800'
+                      : 'border-slate-200 bg-white/95 text-blue-600 hover:bg-slate-50'
                   }`}
+                  title="Maximizar Legenda & Camadas"
+                  aria-label="Maximizar Legenda & Camadas"
                 >
-                  <Layers className="w-3.5 h-3.5 text-blue-500" />
-                  <span>Legenda</span>
+                  <Maximize2 className="h-4 w-4" />
                 </button>
               </div>
             )}
 
             {/* Floating Legend com contraste adaptável e suporte a fontes públicas */}
-            {!focusMode && (
-              <div className={`absolute bottom-12 left-3 sm:bottom-4 sm:left-4 z-[999] px-3.5 py-3 rounded-xl border shadow-lg pointer-events-auto max-w-[280px] sm:max-w-xs transition-all backdrop-blur-md ${
-                isLegendExpanded ? 'block' : 'hidden sm:block'
-              } ${
+            {!focusMode && isLegendExpanded && (
+              <div className={`absolute bottom-16 left-3 sm:left-4 z-[35] px-3.5 py-3 rounded-xl border shadow-lg pointer-events-auto max-w-[280px] sm:max-w-xs transition-all backdrop-blur-md ${
                 highContrastMode 
                   ? 'bg-slate-950/90 border-slate-700 text-white shadow-2xl' 
                   : 'bg-white/95 border-slate-200 text-slate-800'
@@ -452,11 +504,13 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                     </span>
                   )}
                   <button 
+                    type="button"
                     onClick={() => setIsLegendExpanded(false)}
-                    className="sm:hidden p-1 text-slate-400 hover:text-slate-600"
-                    title="Fechar Legenda"
+                    className="btn btn-ghost btn-xs btn-square text-slate-400 hover:text-slate-600"
+                    title="Minimizar Legenda & Camadas"
+                    aria-label="Minimizar Legenda & Camadas"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <Minimize2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>
@@ -519,261 +573,330 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
             </div>
             )}
           </div>
-        )}
 
         {/* 2. IN-MAP FLOATING CONTROLS (HUD) */}
         {!focusMode && (
           <>
-            {/* Top Control Bar HUD */}
-            <div className="absolute top-3 left-3 right-3 sm:left-4 sm:right-4 z-30 pointer-events-none flex flex-wrap items-center justify-between gap-2.5">
-              {/* Left Cluster: Território, Camadas & Fontes */}
-              <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 p-1.5 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-2xl backdrop-blur-md text-white">
-                {/* Território Selector */}
-                <div className="flex items-center gap-1 px-2 py-1 bg-slate-800/90 rounded-xl border border-slate-700/80">
-                  <MapPin className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                  <select
-                    className="bg-transparent text-xs font-semibold text-white focus:ring-0 cursor-pointer outline-none max-w-[130px] sm:max-w-[170px] truncate"
-                    value={selectedSubId}
-                    onChange={(e) => {
-                      setSelectedSubId(e.target.value);
-                      setSelectedChamado(null);
-                      setSelectedPublicPoint(null);
-                    }}
-                  >
-                    <option value="ALL" className="bg-slate-800 text-white">Todas Subprefeituras</option>
-                    {subprefeituras.map((sub) => (
-                      <option key={sub.id} value={sub.id} className="bg-slate-800 text-white">
-                        {sub.nome} {sub.id === '2' ? '★ (Vila Mariana)' : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            {/* Megamenu cartográfico único: os quatro blocos anteriores permanecem horizontais nos popovers */}
+            <MapControlsMegaMenu
+              groups={[
+                {
+                  id: 'territorio',
+                  label: 'Filtros',
+                  icon: <MapPin className="h-3.5 w-3.5 shrink-0 text-sky-400" />,
+                  content: (
+                    <>
+                      <div className="flex items-center gap-1 rounded-xl border border-slate-700/80 bg-slate-800/90 px-2 py-1">
+                        <MapPin className="h-3.5 w-3.5 shrink-0 text-sky-400" />
+                        <select
+                          className="max-w-[190px] cursor-pointer truncate bg-transparent text-xs font-semibold text-white outline-none focus:ring-0"
+                          value={selectedDistrict}
+                          onChange={(event) => {
+                            setSelectedDistrict(event.target.value as DistrictFilter);
+                            setSelectedChamado(null);
+                            setSelectedPublicPoint(null);
+                          }}
+                          title="Filtrar chamados por distrito da SUB-VM"
+                        >
+                          <option value="TODOS" className="bg-slate-800 text-white">SUB-VM • Todos os distritos</option>
+                          <option value="Vila Mariana" className="bg-slate-800 text-white">Distrito Vila Mariana</option>
+                          <option value="Moema" className="bg-slate-800 text-white">Distrito Moema</option>
+                          <option value="Saúde" className="bg-slate-800 text-white">Distrito Saúde</option>
+                        </select>
+                      </div>
 
-                {/* Atalho Rápido para Jurisdição Vila Mariana */}
-                <button
-                  onClick={() => {
-                    setSelectedSubId(selectedSubId === '2' ? 'ALL' : '2');
-                    setSelectedChamado(null);
-                    setSelectedPublicPoint(null);
-                  }}
-                  className={`flex items-center gap-1 px-2 py-1 rounded-xl text-xs font-bold transition-all border whitespace-nowrap ${
-                    selectedSubId === '2'
-                      ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md ring-1 ring-amber-300'
-                      : 'bg-slate-800/90 hover:bg-slate-700 text-amber-300 border-amber-500/40'
-                  }`}
-                  title="Focar na Subprefeitura Vila Mariana (Distritos: Vila Mariana, Moema, Saúde)"
-                >
-                  <span>★ SUB-VM</span>
-                </button>
+                      <div className="flex items-center gap-0.5 rounded-xl border border-slate-700/80 bg-slate-800/90 p-0.5">
+                        {(['TODOS', 'ZELADORIA', 'INFRAESTRUTURA', 'SOCIAL'] as LayerFilter[]).map((layer) => {
+                          const isActive = activeLayer === layer;
+                          const label = layer === 'TODOS' ? 'Todos' : layer === 'ZELADORIA' ? 'Zeladoria' : layer === 'INFRAESTRUTURA' ? 'Infra' : 'Social';
+                          return (
+                            <button
+                              key={layer}
+                              type="button"
+                              onClick={() => {
+                                setActiveLayer(layer);
+                                setSelectedChamado(null);
+                              }}
+                              className={`whitespace-nowrap rounded-lg px-2 py-1 text-xs font-semibold transition-all ${
+                                isActive
+                                  ? layer === 'SOCIAL'
+                                    ? 'bg-emerald-600 text-white shadow-xs'
+                                    : 'bg-blue-600 text-white shadow-xs'
+                                  : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
 
-            {/* Filtros Rápidos de Categorias */}
-            <div className="flex items-center gap-0.5 bg-slate-800/90 p-0.5 rounded-xl border border-slate-700/80">
-              {(['TODOS', 'ZELADORIA', 'INFRAESTRUTURA', 'SOCIAL'] as LayerFilter[]).map((layer) => {
-                const isActive = activeLayer === layer;
-                const label = layer === 'TODOS' ? 'Todos' : layer === 'ZELADORIA' ? 'Zeladoria' : layer === 'INFRAESTRUTURA' ? 'Infra' : 'Social';
-                return (
-                  <button
-                    key={layer}
-                    onClick={() => {
-                      setActiveLayer(layer);
-                      setSelectedChamado(null);
-                    }}
-                    className={`px-2 py-1 text-xs font-semibold rounded-lg transition-all whitespace-nowrap ${
-                      isActive
-                        ? layer === 'SOCIAL'
-                          ? 'bg-emerald-600 text-white shadow-xs'
-                          : 'bg-blue-600 text-white shadow-xs'
-                        : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
+                      <button
+                        type="button"
+                        data-close-megamenu
+                        onClick={() => setIsAddSourceOpen(true)}
+                        className={`flex items-center gap-1.5 whitespace-nowrap rounded-xl border px-2.5 py-1 text-xs font-bold transition-all ${
+                          activePublicSources.length > 0
+                            ? 'border-purple-500 bg-purple-600 text-white shadow-md ring-1 ring-purple-400/50 hover:bg-purple-700'
+                            : 'border-purple-900/60 bg-slate-800/90 text-purple-300 hover:bg-slate-700'
+                        }`}
+                        title="Adicionar novas fontes públicas de análise territorial"
+                      >
+                        <Database className="h-3.5 w-3.5" />
+                        <span>Fontes</span>
+                        <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
+                          activePublicSources.length > 0
+                            ? 'bg-white text-purple-800'
+                            : 'bg-purple-900 text-purple-200'
+                        }`}>
+                          {activePublicSources.length}
+                        </span>
+                      </button>
+                    </>
+                  )
+                },
+                {
+                  id: 'visualizacao',
+                  label: 'Mapa',
+                  icon: <MapIcon className="h-3.5 w-3.5 shrink-0 text-blue-400" />,
+                  content: (
+                    <>
+                      <ControlDropdown
+                        label="Mapa"
+                        value={engineControlConfig.shortLabel}
+                        align="start"
+                        icon={<MapIcon className="h-3.5 w-3.5 shrink-0 text-sky-400" />}
+                        options={availableEngines.map((engine) => {
+                          const engineId = engine.id as DemoMapEngine;
+                          const config = MAP_ENGINE_CONTROL_CONFIG[engineId] || FALLBACK_ENGINE_CONFIG;
+                          return {
+                            id: engine.id,
+                            label: config.shortLabel,
+                            description: config.description,
+                            selected: activeMapEngine === engine.id,
+                            onSelect: () => handleMapEngineSelect(engineId)
+                          };
+                        })}
+                      />
 
-            {/* Botão Fontes Públicas */}
-            <button
-              onClick={() => setIsAddSourceOpen(true)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-xl transition-all border whitespace-nowrap ${
-                activePublicSources.length > 0
-                  ? 'bg-purple-600 hover:bg-purple-700 text-white border-purple-500 shadow-md ring-1 ring-purple-400/50'
-                  : 'bg-slate-800/90 hover:bg-slate-700 text-purple-300 border-purple-900/60'
-              }`}
-              title="Adicionar novas fontes públicas de análise territorial"
-            >
-              <Database className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Fontes</span>
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
-                activePublicSources.length > 0
-                  ? 'bg-white text-purple-800'
-                  : 'bg-purple-900 text-purple-200'
-              }`}>
-                {activePublicSources.length}
-              </span>
-            </button>
-          </div>
+                      <ControlDropdown
+                        label="Ocorrências"
+                        value={occurrenceSummary}
+                        align="start"
+                        icon={<Layers className="h-3.5 w-3.5 shrink-0 text-blue-400" />}
+                        disabled={occurrenceControlDisabled}
+                        disabledReason={occurrenceControlDisabled ? 'A representação é definida automaticamente pelo mapa selecionado.' : undefined}
+                        options={[
+                          {
+                            id: 'cluster',
+                            label: 'Agrupadas',
+                            description: 'Agrupa ocorrências próximas para reduzir sobreposição.',
+                            selected: viewMode === 'CLUSTER',
+                            onSelect: () => setViewMode('CLUSTER')
+                          },
+                          {
+                            id: 'normal',
+                            label: 'Individuais',
+                            description: 'Exibe cada ocorrência como um marcador independente.',
+                            selected: viewMode === 'NORMAL',
+                            onSelect: () => setViewMode('NORMAL')
+                          }
+                        ]}
+                      />
 
-          {/* Right Cluster: Motor de Mapa, Modos de Visão e Painéis */}
-          <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 p-1.5 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-2xl backdrop-blur-md text-white">
-            {/* Seletor Rápido de Motores */}
-            <div className="flex items-center gap-1 px-2 py-1 bg-slate-800/90 rounded-xl border border-slate-700/80">
-              <MapIcon className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-              <select
-                className="bg-transparent text-xs font-semibold text-white focus:ring-0 cursor-pointer outline-none max-w-[130px] sm:max-w-none"
-                value={activeMapEngine}
-                onChange={(e) => setActiveMapEngine(e.target.value as any)}
-                title="Selecione o motor cartográfico"
-              >
-                {availableEngines.map((eng) => (
-                  <option key={eng.id} value={eng.id} className="bg-slate-800 text-white">
-                    {eng.nome} ({eng.badge})
-                  </option>
-                ))}
-              </select>
-            </div>
+                      <ControlDropdown
+                        label="Painéis"
+                        value={panelsSummary}
+                        align="start"
+                        icon={<List className="h-3.5 w-3.5 shrink-0 text-violet-400" />}
+                        selectionMode="multiple"
+                        options={[
+                          {
+                            id: 'lista',
+                            label: 'Lista sincronizada',
+                            description: 'Abre a relação de chamados sem alterar a representação do mapa.',
+                            selected: isListOpen,
+                            onSelect: () => setIsListOpen((open) => !open)
+                          },
+                          {
+                            id: 'estatisticas',
+                            label: 'Estatísticas',
+                            description: 'Exibe indicadores e distribuição por categoria.',
+                            selected: isAnalyticsOpen,
+                            onSelect: () => setIsAnalyticsOpen((open) => !open)
+                          }
+                        ]}
+                      />
 
-            {/* Modos de Visão (Cluster, Heatmap, Lista, Comparação) */}
-            <div className="flex items-center gap-0.5 bg-slate-800/90 p-0.5 rounded-xl border border-slate-700/80">
-              <button
-                onClick={() => setViewMode('CLUSTER')}
-                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'CLUSTER' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
-                title="Marcadores agrupados em clusters"
-              >
-                <Layers className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setViewMode('HEATMAP')}
-                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'HEATMAP' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
-                title="Mapa de calor (densidade)"
-              >
-                <Flame className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setViewMode('LISTA')}
-                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'LISTA' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
-                title="Lista sincronizada"
-              >
-                <List className="w-3.5 h-3.5" />
-              </button>
-              {session.role !== 'GESTOR' && (
-                <button
-                  onClick={() => setViewMode('COMPARACAO')}
-                  className={`p-1.5 rounded-lg transition-colors ${viewMode === 'COMPARACAO' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
-                  title="Comparação lado a lado (Split Map)"
-                >
-                  <LayoutTemplate className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
+                      <ControlDropdown
+                        label="Exibição"
+                        value={displaySummary}
+                        icon={<Sliders className="h-3.5 w-3.5 shrink-0 text-amber-400" />}
+                        selectionMode="multiple"
+                        options={[
+                          {
+                            id: 'pontos-cegos',
+                            label: 'Pontos cegos',
+                            description: 'Destaca áreas com acúmulo de chamados atrasados.',
+                            disabled: !engineControlConfig.blindSpots,
+                            disabledReason: !engineControlConfig.blindSpots ? 'Indisponível no motor 3D.' : undefined,
+                            selected: showPontosCegos && engineControlConfig.blindSpots,
+                            onSelect: () => setShowPontosCegos((show) => !show)
+                          },
+                          {
+                            id: 'alto-contraste',
+                            label: 'Alto contraste',
+                            description: 'Otimiza cores e legibilidade para apresentação em telão.',
+                            selected: highContrastMode,
+                            onSelect: () => setHighContrastMode((enabled) => !enabled)
+                          }
+                        ]}
+                      />
+                    </>
+                  )
+                },
+                {
+                  id: 'motor',
+                  label: 'Motor',
+                  icon: <Globe className="h-3.5 w-3.5 shrink-0 text-cyan-400" />,
+                  content: (
+                    <>
+                      <div className="flex items-center gap-1.5 rounded-lg border border-sky-800 bg-sky-950 px-2 py-1 text-xs font-bold text-sky-300">
+                        <Globe className="h-3.5 w-3.5 text-sky-400" />
+                        <span>{availableEngines.find((engine) => engine.id === activeMapEngine)?.nome || engineControlConfig.shortLabel}</span>
+                      </div>
 
-            {/* Pontos Cegos Toggle */}
-            <button
-              onClick={() => setShowPontosCegos(!showPontosCegos)}
-              className={`p-1.5 rounded-xl border transition-all ${
-                showPontosCegos
-                  ? 'bg-red-600 text-white border-red-500 shadow-md ring-1 ring-red-400'
-                  : 'bg-slate-800/90 text-slate-400 border-slate-700 hover:text-white'
-              }`}
-              title="Destacar áreas com acúmulo de atrasos operacionais (Pontos Cegos)"
-            >
-              {showPontosCegos ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-            </button>
+                      {activeMapEngine === 'MAPLIBRE_GL' ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setMapLibre3DMode((enabled) => !enabled)}
+                            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-all ${
+                              mapLibre3DMode
+                                ? 'border-blue-400 bg-blue-600 text-white shadow-sm'
+                                : 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
+                            }`}
+                            title="Alternar entre projeção plana 2D e perspectiva isométrica 3D"
+                          >
+                            <Compass className={`h-3.5 w-3.5 ${mapLibre3DMode ? 'rotate-45 text-amber-300' : ''}`} />
+                            <span>{mapLibre3DMode ? 'Perspectiva 3D' : 'Planta 2D'}</span>
+                          </button>
 
-            {/* Alto Contraste */}
-            <button
-              onClick={() => setHighContrastMode(!highContrastMode)}
-              className={`p-1.5 rounded-xl border transition-all ${
-                highContrastMode
-                  ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md'
-                  : 'bg-slate-800/90 text-slate-400 border-slate-700 hover:text-white'
-              }`}
-              title="Modo Alto Contraste para projeção em telão"
-            >
-              <Monitor className="w-3.5 h-3.5 text-amber-400" />
-            </button>
+                          <div className="flex items-center rounded-lg border border-slate-700 bg-slate-800 p-0.5">
+                            {([
+                              ['STANDARD', 'OSM HOT'],
+                              ['CADASTRO', 'Cadastral'],
+                              ['DARK', 'Dark']
+                            ] as Array<[MapLibreStyleMode, string]>).map(([style, label]) => (
+                              <button
+                                key={style}
+                                type="button"
+                                onClick={() => setMapLibreStyleMode(style)}
+                                className={`rounded px-2 py-1 text-[11px] font-bold ${
+                                  mapLibreStyleMode === style
+                                    ? style === 'DARK' ? 'bg-slate-700 text-white' : style === 'CADASTRO' ? 'bg-indigo-600 text-white' : 'bg-blue-600 text-white'
+                                    : 'text-slate-400 hover:text-white'
+                                }`}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
 
-            {/* Painel de Análise Toggle Button */}
-            {viewMode !== 'COMPARACAO' && (
-              <button
-                onClick={() => setIsAnalyticsOpen(!isAnalyticsOpen)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-xl transition-all border ${
-                  isAnalyticsOpen
-                    ? 'bg-blue-600 text-white border-blue-500 shadow-md ring-1 ring-blue-400'
-                    : 'bg-slate-800/90 text-slate-300 border-slate-700 hover:text-white'
-                }`}
-                title={isAnalyticsOpen ? 'Ocultar painel de estatísticas' : 'Mostrar painel de estatísticas da região'}
-              >
-                <BarChart3 className="w-3.5 h-3.5 text-sky-400" />
-                <span className="hidden sm:inline">Estatísticas</span>
-              </button>
-            )}
-          </div>
-        </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMapLibre3DMode(false);
+                              setMapLibreResetVersion((version) => version + 1);
+                            }}
+                            className="rounded-lg border border-slate-700 bg-slate-800 p-1.5 text-slate-400 transition-colors hover:bg-slate-700 hover:text-white"
+                            title="Restaurar orientação Norte / 0°"
+                            aria-label="Restaurar orientação Norte / 0°"
+                          >
+                            <RotateCcw className="h-3.5 w-3.5 text-sky-400" />
+                          </button>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-3 text-xs text-slate-300">
+                          <span>{engineControlConfig.description}</span>
+                          <span className="rounded border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-[10px] text-slate-400">
+                            {filteredChamados.length} ocorrências
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  )
+                },
+                {
+                  id: 'operacoes',
+                  label: 'Ações',
+                  icon: <Sparkles className="h-3.5 w-3.5 shrink-0 text-purple-400" />,
+                  content: (
+                    <>
+                      <button
+                        type="button"
+                        data-close-megamenu
+                        onClick={() => setIsCrossPanelOpen(true)}
+                        className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold shadow-md transition-all ${
+                          crossAnalysisActive
+                            ? 'border-purple-500 bg-purple-600 text-white ring-2 ring-purple-500/40 hover:bg-purple-700'
+                            : 'border-slate-700 bg-slate-800/90 text-slate-200 hover:bg-slate-700'
+                        }`}
+                        title="Abrir painel de correlação e cruzamento entre demandas SP156 e fontes públicas"
+                      >
+                        <Sparkles className="h-3.5 w-3.5 text-purple-300" />
+                        <span>Cruzamento de Camadas</span>
+                        <span className={`rounded-full px-1.5 py-0.2 font-mono text-[10px] font-extrabold ${
+                          crossAnalysisActive ? 'border border-purple-700 bg-purple-950 text-purple-200' : 'bg-slate-900 text-slate-400'
+                        }`}>
+                          {hotspotsCruzamento.length}
+                        </span>
+                      </button>
 
-        {/* Bottom Operations Floating Dock */}
-        <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 z-20 pointer-events-none flex flex-wrap items-center gap-2">
-          <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 p-1.5 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-2xl backdrop-blur-md text-white text-xs">
-            {/* Botão Cruzamento de Camadas */}
-            <button
-              onClick={() => setIsCrossPanelOpen(true)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all shadow-md ${
-                crossAnalysisActive
-                  ? 'bg-purple-600 hover:bg-purple-700 text-white border-purple-500 ring-2 ring-purple-500/40'
-                  : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 border-slate-700'
-              }`}
-              title="Abrir painel de correlação e cruzamento entre demandas SP156 e fontes públicas"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-purple-300" />
-              <span className="hidden sm:inline">Cruzamento de Camadas</span>
-              <span className="sm:hidden">Cruzamento</span>
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-extrabold ${
-                crossAnalysisActive ? 'bg-purple-950 text-purple-200 border border-purple-700' : 'bg-slate-900 text-slate-400'
-              }`}>
-                {hotspotsCruzamento.length}
-              </span>
-            </button>
+                      <button
+                        type="button"
+                        data-close-megamenu
+                        onClick={() => setIsCamadasPanelOpen(true)}
+                        className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/90 px-2.5 py-1.5 text-xs font-bold text-slate-200 shadow-xs transition-all hover:bg-slate-700"
+                        title="Gerenciar mapeamento de camadas externas, persistência e bibliotecas"
+                      >
+                        <SlidersHorizontal className="h-3.5 w-3.5 text-purple-400" />
+                        <span>Camadas & Fontes</span>
+                        <span className="rounded-full border border-purple-800 bg-purple-950 px-1.5 py-0.2 font-mono text-[10px] font-bold text-purple-300">
+                          {camadasAtivasCount}
+                        </span>
+                      </button>
 
-            {/* Botão Camadas & Fontes */}
-            <button
-              onClick={() => setIsCamadasPanelOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border border-slate-700 bg-slate-800/90 hover:bg-slate-700 text-slate-200 transition-all shadow-xs"
-              title="Gerenciar mapeamento de camadas externas (GeoJSON/WMS), persistência e bibliotecas"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5 text-purple-400" />
-              <span className="hidden md:inline">Camadas & Fontes</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-purple-950 text-purple-300 border border-purple-800">
-                {camadasAtivasCount}
-              </span>
-            </button>
+                      <button
+                        type="button"
+                        data-close-megamenu
+                        onClick={() => {
+                          if (bibliotecasPublicas.length > 0) {
+                            setModalBiblioteca(bibliotecasPublicas[0]);
+                          }
+                        }}
+                        className="flex items-center gap-1.5 rounded-xl border border-red-900/60 bg-red-950/70 px-2.5 py-1.5 text-xs font-bold text-rose-200 shadow-xs transition-all hover:bg-red-900/80"
+                        title="Ver prontuário das Bibliotecas Públicas de SP"
+                      >
+                        <BookOpen className="h-3.5 w-3.5 text-rose-400" />
+                        <span>Bibliotecas SP</span>
+                        <span className="rounded-full bg-red-900 px-1.5 py-0.2 font-mono text-[10px] text-rose-200">
+                          {bibliotecasPublicas.length}
+                        </span>
+                      </button>
 
-            {/* Botão Bibliotecas SP */}
-            <button
-              onClick={() => {
-                if (bibliotecasPublicas.length > 0) {
-                  setModalBiblioteca(bibliotecasPublicas[0]);
+                      <div className="border-l border-slate-700 pl-1">
+                        <LiveIndicator
+                          secondsAgo={secondsAgo}
+                          isUpdating={isUpdating}
+                          onRefresh={triggerLiveUpdate}
+                        />
+                      </div>
+                    </>
+                  )
                 }
-              }}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border border-red-900/60 bg-red-950/70 hover:bg-red-900/80 text-rose-200 transition-all shadow-xs"
-              title="Ver prontuário e papel análogo das Bibliotecas Públicas de SP"
-            >
-              <BookOpen className="w-3.5 h-3.5 text-rose-400" />
-              <span className="hidden md:inline">Bibliotecas SP</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-red-900 text-rose-200">
-                {bibliotecasPublicas.length}
-              </span>
-            </button>
-
-            {/* Indicador de Atualização em Tempo Real */}
-            <div className="hidden lg:block pl-1 border-l border-slate-700">
-              <LiveIndicator 
-                secondsAgo={secondsAgo}
-                isUpdating={isUpdating}
-                onRefresh={triggerLiveUpdate}
-              />
-            </div>
-          </div>
-        </div>
+              ]}
+            />
 
         {/* Modo Foco / Mapa Limpo Toggle */}
         <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 z-[999] pointer-events-auto">
@@ -802,9 +925,12 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
           </div>
         )}
 
+        {/* Painéis independentes: empilhados no mobile e lado a lado em telas maiores */}
+        {!selectedChamado && !selectedPublicPoint && (isListOpen || isAnalyticsOpen) && !focusMode && (
+          <div className="absolute left-4 right-4 top-20 bottom-16 z-30 flex flex-col gap-3 pointer-events-none sm:left-auto sm:flex-row">
         {/* List View Floating Panel */}
-        {viewMode === 'LISTA' && !selectedChamado && !selectedPublicPoint && !focusMode && (
-           <div className={`absolute top-20 right-4 bottom-16 w-80 sm:w-96 border rounded-2xl shadow-2xl flex flex-col shrink-0 overflow-hidden z-30 pointer-events-auto backdrop-blur-xl ${
+        {isListOpen && (
+           <div className={`w-full sm:w-80 lg:w-96 min-h-0 flex-1 border rounded-2xl shadow-2xl flex flex-col shrink-0 overflow-hidden pointer-events-auto backdrop-blur-xl ${
              highContrastMode ? 'bg-slate-900/95 border-slate-700 text-white' : 'bg-white/95 border-slate-200 text-slate-900 shadow-slate-900/20'
            }`}>
               <div className={`px-5 py-4 border-b flex items-center justify-between ${
@@ -814,7 +940,17 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                   <List className="w-4 h-4 text-blue-500" />
                   Lista Sincronizada
                 </h3>
-                <span className="text-xs text-slate-400 font-mono">{filteredChamados.length} chamados</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400 font-mono">{filteredChamados.length} chamados</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsListOpen(false)}
+                    className="btn btn-ghost btn-xs btn-square text-slate-400 hover:text-slate-700"
+                    aria-label="Fechar lista sincronizada"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
               <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
                  {filteredChamados.slice(0, 50).map(c => (
@@ -849,8 +985,8 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
         )}
 
         {/* Region Analysis Floating Panel */}
-        {!selectedChamado && !selectedPublicPoint && viewMode !== 'LISTA' && viewMode !== 'COMPARACAO' && isAnalyticsOpen && !focusMode && (
-           <div className={`absolute top-20 right-4 bottom-16 w-80 sm:w-96 border rounded-2xl shadow-2xl flex flex-col shrink-0 overflow-hidden z-30 pointer-events-auto backdrop-blur-xl animate-in slide-in-from-right-6 duration-200 ${
+        {isAnalyticsOpen && (
+           <div className={`w-full sm:w-80 lg:w-96 min-h-0 flex-1 border rounded-2xl shadow-2xl flex flex-col shrink-0 overflow-hidden pointer-events-auto backdrop-blur-xl animate-in slide-in-from-right-6 duration-200 ${
              highContrastMode ? 'bg-slate-900/95 border-slate-700 text-white' : 'bg-white/95 border-slate-200 text-slate-900 shadow-slate-900/20'
            }`}>
               <div className={`px-4 py-3 border-b flex items-center justify-between gap-2 shrink-0 ${
@@ -859,7 +995,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 <h3 className="font-semibold flex items-center gap-2 text-sm truncate">
                   <BarChart3 className="w-4 h-4 text-blue-500 shrink-0" />
                   <span className="truncate">
-                    {selectedSubId === 'ALL' ? 'Análise Geral da Capital' : `Análise: ${selectedSubprefeitura?.nome}`}
+                    {selectedDistrict === 'TODOS' ? 'Análise: SUB-VM' : `Distrito: ${selectedDistrict}`}
                   </span>
                 </h3>
                 <div className="flex items-center gap-1.5">
@@ -986,6 +1122,8 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                  </div>
               </div>
            </div>
+        )}
+          </div>
         )}
 
         {/* Side Panel for Chamado Details */}

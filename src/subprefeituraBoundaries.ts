@@ -1,38 +1,9 @@
 export type SubprefeituraPolygons = Record<string, [number, number][]>;
 
+// Somente o contorno da SUB-VM é carregado pela demonstração. Os demais
+// arquivos continuam preservados em public/data/subprefeituras para uso futuro.
 const BOUNDARY_FILES: Record<string, string> = {
-  '1': 'se.geojson',
   '2': 'vila-mariana.geojson',
-  '3': 'mooca.geojson',
-  '4': 'pinheiros.geojson',
-  '5': 'lapa.geojson',
-  '6': 'butanta.geojson',
-  '7': 'campo-limpo.geojson',
-  '8': 'capela-do-socorro.geojson',
-  '9': 'itaquera.geojson',
-  '10': 'santana-tucuruvi.geojson',
-  '11': 'freguesia-do-o-brasilandia.geojson',
-  '12': 'santo-amaro.geojson',
-  '13': 'ipiranga.geojson',
-  '14': 'penha.geojson',
-  '15': 'sao-miguel.geojson',
-  '16': 'pirituba-jaragua.geojson',
-  '17': 'jabaquara.geojson',
-  '18': 'vila-prudente.geojson',
-  '19': 'ermelino-matarazzo.geojson',
-  '20': 'cidade-tiradentes.geojson',
-  '21': 'sao-mateus.geojson',
-  '22': 'guaianazes.geojson',
-  '23': 'itaim-paulista.geojson',
-  '24': 'cidade-ademar.geojson',
-  '25': 'parelheiros.geojson',
-  '26': 'm-boi-mirim.geojson',
-  '27': 'casa-verde.geojson',
-  '28': 'jacana-tremembe.geojson',
-  '29': 'perus.geojson',
-  '30': 'vila-maria-vila-guilherme.geojson',
-  '31': 'aricanduva-vila-formosa.geojson',
-  '32': 'sapopemba.geojson',
 };
 
 type BoundaryGeoJson = {

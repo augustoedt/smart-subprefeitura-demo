@@ -196,7 +196,7 @@ export default function SimulacaoZap({
       anexoDados: {
         categoria: cat,
         prazoHoras: 48,
-        endereco: 'Rua da Mooca, 1200 - Mooca, São Paulo'
+        endereco: 'Av. Moema, 1200 - Moema, São Paulo'
       },
       opcoesRespostaRapida: [
         '📍 Enviar Minha Localização Atual',
@@ -212,9 +212,9 @@ export default function SimulacaoZap({
       texto: '📍 Localização GPS compartilhada em tempo real',
       tipoAnexo: 'LOCALIZACAO',
       anexoDados: {
-        endereco: 'Rua da Mooca, 1200 - Mooca, São Paulo - SP',
-        lat: -23.5564,
-        lng: -46.5936
+        endereco: 'Av. Moema, 1200 - Moema, São Paulo - SP',
+        lat: -23.6030,
+        lng: -46.6610
       }
     });
 
@@ -223,7 +223,7 @@ export default function SimulacaoZap({
       setIsTyping(false);
       adicionarMensagem({
         remetente: 'BOT_SP156',
-        texto: '📍 Localização validada com sucesso na malha viária!\nJurisdição operacional: **Subprefeitura da Mooca**.\n\nDeseja anexar uma foto para guiar a equipe da viatura ou deseja emitir o protocolo agora?',
+        texto: '📍 Localização validada com sucesso na malha viária!\nJurisdição operacional: **Subprefeitura Vila Mariana — Distrito Moema**.\n\nDeseja anexar uma foto para guiar a equipe da viatura ou deseja emitir o protocolo agora?',
         opcoesRespostaRapida: [
           '📸 Anexar Foto da Ocorrência',
           '🚀 Emitir Protocolo Oficial SP156'
@@ -268,14 +268,16 @@ export default function SimulacaoZap({
       id: crypto.randomUUID(),
       protocolo: novoProtocolo,
       categoria: selectedCategoria,
-      subprefeituraId: '3', // Mooca
+      subprefeituraId: '2',
+      distrito: 'Moema',
+      bairro: 'Moema (Pássaros)',
       status: 'NOVO',
       prioridade: selectedCategoria === 'ARVORE_CAIDA' || selectedCategoria === 'BUEIRO' ? 'URGENTE' : 'ALTA',
-      lat: -23.5564 + (Math.random() - 0.5) * 0.01,
-      lng: -46.5936 + (Math.random() - 0.5) * 0.01,
+      lat: -23.6030 + (Math.random() - 0.5) * 0.008,
+      lng: -46.6610 + (Math.random() - 0.5) * 0.008,
       dataAbertura: new Date().toISOString(),
       isAtrasado: false,
-      endereco: 'Rua da Mooca, 1200 - Mooca',
+      endereco: 'Av. Moema, 1200 - Moema',
       origem: 'WHATSAPP_SP156',
       telefoneCidadao: zapSession.numeroTelefone
     };
@@ -295,13 +297,13 @@ export default function SimulacaoZap({
       setIsTyping(false);
       adicionarMensagem({
         remetente: 'BOT_SP156',
-        texto: `🎉 **Ordem de Serviço Aberta com Sucesso!**\n\n📋 **Protocolo:** \`${novoProtocolo}\`\n🏷️ **Serviço:** ${selectedCategoria.replace('_', ' ')}\n📍 **Endereço:** Rua da Mooca, 1200\n🏢 **Subprefeitura:** Mooca\n⏱️ **Prazo Regulamentar:** 48 horas úteis\n\nO chamado já está visível para os supervisores no painel central. Avisaremos você por aqui em cada etapa do atendimento!`,
+        texto: `🎉 **Ordem de Serviço Aberta com Sucesso!**\n\n📋 **Protocolo:** \`${novoProtocolo}\`\n🏷️ **Serviço:** ${selectedCategoria.replace('_', ' ')}\n📍 **Endereço:** Av. Moema, 1200\n🏢 **Subprefeitura:** Vila Mariana • Distrito Moema\n⏱️ **Prazo Regulamentar:** 48 horas úteis\n\nO chamado já está visível para os supervisores da SUB-VM. Avisaremos você por aqui em cada etapa do atendimento!`,
         tipoAnexo: 'PROTOCOLO',
         anexoDados: {
           protocolo: novoProtocolo,
           categoria: selectedCategoria,
           statusChamado: 'NOVO',
-          subprefeituraNome: 'Mooca',
+          subprefeituraNome: 'Vila Mariana',
           prazoHoras: 48
         },
         opcoesRespostaRapida: [
@@ -857,12 +859,12 @@ export default function SimulacaoZap({
               /* CENÁRIOS DO MORADOR / CIDADÃO */
               <div className="space-y-2.5">
                 <button
-                  onClick={() => handleEnviarMensagemTexto('Tem um buraco perigoso na pista aqui na Rua da Mooca, altura do 1200')}
+                  onClick={() => handleEnviarMensagemTexto('Tem um buraco perigoso na pista aqui na Av. Moema, altura do 1200')}
                   className="w-full text-left p-3 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-xl transition-all group"
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-bold text-slate-800 group-hover:text-emerald-900">
-                      🕳️ Cenário A: Tapa-Buraco na Mooca
+                      🕳️ Cenário A: Tapa-Buraco em Moema
                     </span>
                     <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-700 transition-transform group-hover:translate-x-0.5" />
                   </div>
@@ -872,7 +874,7 @@ export default function SimulacaoZap({
                 </button>
 
                 <button
-                  onClick={() => handleEnviarMensagemTexto('Árvore de grande porte caiu com a tempestade na Praça da Sé e derrubou fios')}
+                  onClick={() => handleEnviarMensagemTexto('Árvore de grande porte caiu com a tempestade na Praça da Árvore, distrito Saúde, e derrubou fios')}
                   className="w-full text-left p-3 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-xl transition-all group"
                 >
                   <div className="flex items-center justify-between mb-1">

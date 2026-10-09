@@ -6,7 +6,7 @@
 
 ## Onde estamos
 
-**Produção Railway:** projeto e serviço `subprefeitura` publicados no ambiente `production`; deployment confirmado como `SUCCESS`. URL pública: [https://subprefeitura-production.up.railway.app](https://subprefeitura-production.up.railway.app), verificada com HTTP 200 em 2026-10-08. O deploy e os passos de verificação estão no [runbook Railway](../runbooks/deploy-railway.md). A análise de imagens usa `gemini-3.1-flash-lite`; `GEMINI_API_KEY` está configurada no serviço e o endpoint `/api/analyze-image` foi validado em produção com HTTP 200.
+**Produção Railway:** projeto e serviço `subprefeitura` publicados no ambiente `production` a partir do repositório `augustoedt/smart-subprefeitura-demo`, branch `feature/vila-mariana-only`; deployment `9bfe5448-b303-4e0a-a088-e1f1c860c94c` confirmado como `SUCCESS`. URL pública: [https://subprefeitura-production.up.railway.app](https://subprefeitura-production.up.railway.app), verificada com HTTP 200 em 2026-10-08. O deploy e os passos de verificação estão no [runbook Railway](../runbooks/deploy-railway.md). A análise de imagens usa `gemini-3.1-flash-lite`; `GEMINI_API_KEY` está configurada no serviço e o endpoint `/api/analyze-image` foi validado em produção com HTTP 200.
 
 A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente especializada para a **Subprefeitura Vila Mariana (SUB-VM)**, compreendendo os distritos de **Vila Mariana**, **Moema** e **Saúde**, com identidade visual governamental autêntica da Prefeitura de São Paulo, estética profissional limpa (sem vícios ou traços genéricos de IA), compartilhamento reativo de estado unificado e controle de acesso baseado em papéis (RBAC):
 
@@ -27,7 +27,7 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
    - **Interface GIS de Alta Precisão**: Controles in-map estilizados como software corporativo de geoprocessamento (padrão QGIS / ArcGIS Web), mapa full-screen de borda a borda.
    - **6 Motores Cartográficos Intercambiáveis**: Leaflet, MapLibre GL 3D, Satélite Esri com ortofoto, Mapa Coroplético, Buffers de Influência Cívica e Heatmap Kernel métrico. Os endpoints CARTO foram removidos após passarem a exigir chave; Leaflet usa OpenStreetMap, MapLibre usa tiles HOT/OpenStreetMap e o satélite usa imagem e referências Esri, conforme a [ADR 0018](../decisions/0018-provedores-cartograficos-sem-chave-e-remocao-carto.md).
    - **Camadas & Dados Públicos**: Cruzamento espacial com fórmula de Haversine contra bases de SSP-SP, IBGE, CET e 10 Bibliotecas Públicas da capital com raio de proteção de 500m.
-   - **Preset Territorial**: Botão "SUB-VM" para recentralização imediata na Vila Mariana e perspectivas 3D.
+   - **Enquadramento Territorial Fixo**: mapas iniciam na SUB-VM; a barra "Vistas", presets metropolitanos e botão de recentralização foram removidos, preservando zoom e arraste nativos.
 
 4. **Painel Administrativo & Triagem Kanban**:
    - **Fluxo Operacional de 5 Colunas**: *Novo*, *Encaminhado*, *Em Execução*, *Aguardando Aprovação* e *Concluído*.
@@ -53,10 +53,23 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
 
 ## Em andamento
 
+- **Piloto experimental concluído; homologação pendente:** [Controles cartográficos](../plans/plano-compactacao-controles-cartograficos.md) consolidados em um `megamenu-wide` com quatro títulos curtos — Filtros, Mapa, Motor e Ações. Cada popover reproduz horizontalmente os controles anteriores; no mobile, um único botão Controles apresenta o conteúdo vertical. Os seis motores e a matriz de capacidades foram preservados.
+- **Piloto experimental concluído; sem promoção para produção:** [DaisyUI incremental](../plans/plano-adocao-incremental-daisyui.md) instalado na branch `feature/daisyui-subvm-pilot`, com tema `subvm`, `ControlDropdown` e `MapControlsMegaMenu`. Inclui legenda recolhível, expiração do toast inicial em quatro segundos e incorporação da antiga barra inferior e dos controles MapLibre ao megamenu. Lint e build foram aprovados; a branch `feature/vila-mariana-only` e a Railway permanecem inalteradas.
 - **Em execução:** [Plano de expansão geoespacial e indicadores](../plans/plano-expansao-geoespacial-e-indicadores.md), com delimitação territorial e correlações de segurança/trânsito pendentes de atualização do progresso por fase.
 - **Em execução parcial:** [Etapa 6 — delimitação geográfica](../plans/etapa-6-delimitacao-geografica.md). Os 32 contornos GeoJSON autoritativos foram copiados para `public/data/subprefeituras/`, associados aos IDs internos da aplicação e carregados sob demanda no modo coroplético. As malhas simuladas antigas foram removidas. Permanecem pendentes a eventual simplificação controlada das geometrias e a migração da renderização para o componente `<GeoJSON />` nativo do React-Leaflet.
 
 ### Entregas concluídas
+
+- **Sprint 21 (Recorte Territorial Exclusivo da Demonstração SUB-VM) concluída e validada em produção**:
+  - Runtime, chamados, fontes públicas, equipamentos e módulo social restritos à Subprefeitura Vila Mariana.
+  - Filtros municipais substituídos pelos distritos Vila Mariana, Moema e Saúde.
+  - Comparação entre subprefeituras e referências municipais removidas da interface ativa.
+  - Barra "Vistas" removida de Leaflet e MapLibre; enquadramento inicial fixado na SUB-VM.
+  - Loader territorial reduzido a `vila-mariana.geojson`, preservando os outros 31 arquivos sem carregá-los.
+  - Seis modos cartográficos, quatro módulos, perfis, Gemini e Kanban preservados.
+  - `npm run lint`, `npm run build` e validação visual dos seis modos aprovados.
+  - Railway conectada à branch `feature/vila-mariana-only`; deployment e URL pública validados com sucesso.
+  - Decisão registrada na [ADR 0019](../decisions/0019-recorte-territorial-exclusivo-sub-vm.md).
 
 - **Sprint 20 (Redesign de UI/UX Profissional, Clean e Institucional — Eliminação do Visual "AI Generated") 100% Concluída e Validada**:
   - **Fase 1 (Design System Governamental e Tipografia)**:
@@ -249,6 +262,10 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
 2. **Homologar a versão publicada**:
    - Validar os fluxos dos quatro módulos na URL de produção e coletar feedback de gestores e usuários finais.
    - Avaliar a legibilidade das sobreposições de mapas de calor em monitores ultrawide e projetores, e validar os indicadores públicos fictícios.
+3. **Executar quando priorizados os planos de UI cartográfica**:
+   - Criar o tema DaisyUI `subvm` e os primitivos compartilhados.
+   - Implementar os quatro dropdowns compactos e a matriz de capacidades por motor, sem alterar os seis modos existentes.
+   - Prosseguir com a migração incremental somente após homologar o projeto-piloto.
 
 ---
 

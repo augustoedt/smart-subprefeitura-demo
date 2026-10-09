@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { 
-  CheckCircle2, AlertCircle, Info, AlertTriangle, X, ArrowRight, ExternalLink 
+  CheckCircle2, AlertCircle, Info, AlertTriangle, X, ArrowRight
 } from 'lucide-react';
 import { SystemNotification } from '../types';
 
@@ -11,6 +11,23 @@ interface ToastContainerProps {
 }
 
 export default function ToastContainer({ notifications, onDismiss, onNavigate }: ToastContainerProps) {
+  const onDismissRef = useRef(onDismiss);
+  const hasWelcomeToast = notifications.some((notification) => notification.id === 'notif-welcome');
+
+  useEffect(() => {
+    onDismissRef.current = onDismiss;
+  }, [onDismiss]);
+
+  useEffect(() => {
+    if (!hasWelcomeToast) return;
+
+    const welcomeToastTimer = window.setTimeout(() => {
+      onDismissRef.current('notif-welcome');
+    }, 4000);
+
+    return () => window.clearTimeout(welcomeToastTimer);
+  }, [hasWelcomeToast]);
+
   if (!notifications || notifications.length === 0) return null;
 
   return (

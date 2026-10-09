@@ -1,19 +1,16 @@
 import React, { useState } from 'react';
 import { User, Building2, MapPin, ArrowRight, ShieldCheck, HardHat, Users, Award } from 'lucide-react';
-import { subprefeituras } from '../data';
 import { UserSession, UserRole } from '../LoginTypes';
 import BrasaoSaoPaulo from './BrasaoSaoPaulo';
 
 export default function LoginScreen({ onLogin }: { onLogin: (session: UserSession) => void }) {
   const [role, setRole] = useState<UserRole>('GESTOR');
-  // Default to Vila Mariana (id: '2') as the primary jurisdiction
-  const [subId, setSubId] = useState('2');
   const [matricula, setMatricula] = useState('SP-842.190');
 
   const handleLogin = () => {
     onLogin({
       role,
-      subprefeituraId: role === 'GESTOR' ? subId : undefined,
+      subprefeituraId: role === 'GESTOR' ? '2' : undefined,
       matricula: role === 'FUNCIONARIO' ? matricula : undefined
     });
   };
@@ -81,21 +78,12 @@ export default function LoginScreen({ onLogin }: { onLogin: (session: UserSessio
                   
                   {role === 'GESTOR' && (
                     <div className="mt-2.5 pt-2 border-t border-slate-200">
-                      <label className="text-[11px] font-medium text-slate-700 block mb-1">
-                        Jurisdição de Atuação:
-                      </label>
-                      <select 
-                        className="w-full text-xs font-medium border-slate-300 rounded-md p-2 bg-white border outline-none focus:border-slate-900"
-                        value={subId}
-                        onChange={(e) => setSubId(e.target.value)}
-                        onClick={e => e.stopPropagation()}
-                      >
-                        {subprefeituras.map(sub => (
-                          <option key={sub.id} value={sub.id}>
-                            {sub.nome} {sub.id === '2' ? '★ (Subprefeitura Vila Mariana — Sede R. José de Magalhães)' : ''}
-                          </option>
-                        ))}
-                      </select>
+                      <span className="text-[11px] font-medium text-slate-700 block mb-1">
+                        Jurisdição de Atuação
+                      </span>
+                      <div className="w-full text-xs font-semibold border-slate-300 rounded-md p-2 bg-white border text-slate-800">
+                        Subprefeitura Vila Mariana • Vila Mariana, Moema e Saúde
+                      </div>
                     </div>
                   )}
                </div>
@@ -114,10 +102,10 @@ export default function LoginScreen({ onLogin }: { onLogin: (session: UserSessio
                </div>
                <div>
                   <h3 className="font-semibold text-slate-900 text-xs sm:text-sm flex items-center gap-2">
-                    <Building2 className="w-3.5 h-3.5 text-slate-700"/> Gabinete Central (SMSUB / Sala de Situação Global)
+                    <Building2 className="w-3.5 h-3.5 text-slate-700"/> Gabinete Central (SMSUB / Supervisão SUB-VM)
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Monitoramento estratégico das 32 subprefeituras, ranking de TMA e auditoria cruzada.
+                    Supervisão estratégica da SUB-VM, comparativo entre distritos e auditoria operacional.
                   </p>
                </div>
             </label>
