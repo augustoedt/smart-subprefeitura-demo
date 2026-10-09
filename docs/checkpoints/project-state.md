@@ -53,6 +53,7 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
 
 ## Em andamento
 
+- **Planejado para etapa futura:** [Compactação e separação dos controles cartográficos](../plans/plano-compactacao-controles-cartograficos.md), reorganizando a barra em quatro dropdowns: Mapa, Ocorrências, Painéis e Exibição.
 - **Em execução:** [Plano de expansão geoespacial e indicadores](../plans/plano-expansao-geoespacial-e-indicadores.md), com delimitação territorial e correlações de segurança/trânsito pendentes de atualização do progresso por fase.
 - **Em execução parcial:** [Etapa 6 — delimitação geográfica](../plans/etapa-6-delimitacao-geografica.md). Os 32 contornos GeoJSON autoritativos foram copiados para `public/data/subprefeituras/`, associados aos IDs internos da aplicação e carregados sob demanda no modo coroplético. As malhas simuladas antigas foram removidas. Permanecem pendentes a eventual simplificação controlada das geometrias e a migração da renderização para o componente `<GeoJSON />` nativo do React-Leaflet.
 
@@ -260,6 +261,8 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
 2. **Homologar a versão publicada**:
    - Validar os fluxos dos quatro módulos na URL de produção e coletar feedback de gestores e usuários finais.
    - Avaliar a legibilidade das sobreposições de mapas de calor em monitores ultrawide e projetores, e validar os indicadores públicos fictícios.
+3. **Executar quando priorizado o plano de controles cartográficos**:
+   - Implementar os quatro dropdowns compactos e a matriz de capacidades por motor, sem alterar os seis modos existentes.
 
 ---
 
