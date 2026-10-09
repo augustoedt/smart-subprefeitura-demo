@@ -70,7 +70,7 @@ Os controles do mapa são consolidados em quatro grupos:
 - **Motor:** seleção do motor cartográfico e controles compatíveis;
 - **Ações:** fontes públicas, cruzamento espacial, camadas mapeadas, bibliotecas e indicador de atualização.
 
-No desktop, cada grupo abre um popover horizontal ajustado à largura de seus itens. No mobile, os controles são apresentados verticalmente por um único botão.
+No desktop, a barra superior e cada popover horizontal se ajustam à largura de seus itens, sem ocupar toda a extensão do mapa. No mobile, os controles são apresentados verticalmente por um único botão.
 
 ### 3.3 Filtros e representações
 

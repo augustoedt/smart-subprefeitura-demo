@@ -40,7 +40,7 @@ export default function MapControlsMegaMenu({ groups }: MapControlsMegaMenuProps
       <div
         id={menuId}
         popover="auto"
-        className="megamenu megamenu-sm max-sm:megamenu-vertical pointer-events-auto w-full border border-slate-700/80 bg-slate-900/95 p-1 text-white shadow-2xl backdrop-blur-md sm:rounded-xl"
+        className="megamenu megamenu-sm max-sm:megamenu-vertical pointer-events-auto w-max max-w-[calc(100vw-1.5rem)] overflow-x-auto border border-slate-700/80 bg-slate-900/95 p-1 text-white shadow-2xl backdrop-blur-md sm:max-w-[calc(100vw-2rem)] sm:rounded-xl"
       >
         <span className="megamenu-active bg-white/10" aria-hidden="true" />
 
