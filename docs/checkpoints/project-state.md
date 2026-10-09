@@ -6,7 +6,7 @@
 
 ## Onde estamos
 
-**Produção Railway:** projeto e serviço `subprefeitura` publicados no ambiente `production`; deployment confirmado como `SUCCESS`. URL pública: [https://subprefeitura-production.up.railway.app](https://subprefeitura-production.up.railway.app), verificada com HTTP 200 em 2026-10-08. O deploy e os passos de verificação estão no [runbook Railway](../runbooks/deploy-railway.md). A análise de imagens usa `gemini-3.1-flash-lite`; `GEMINI_API_KEY` está configurada no serviço e o endpoint `/api/analyze-image` foi validado em produção com HTTP 200.
+**Produção Railway:** projeto e serviço `subprefeitura` publicados no ambiente `production` a partir do repositório `augustoedt/smart-subprefeitura-demo`, branch `feature/vila-mariana-only`; deployment `9bfe5448-b303-4e0a-a088-e1f1c860c94c` confirmado como `SUCCESS`. URL pública: [https://subprefeitura-production.up.railway.app](https://subprefeitura-production.up.railway.app), verificada com HTTP 200 em 2026-10-08. O deploy e os passos de verificação estão no [runbook Railway](../runbooks/deploy-railway.md). A análise de imagens usa `gemini-3.1-flash-lite`; `GEMINI_API_KEY` está configurada no serviço e o endpoint `/api/analyze-image` foi validado em produção com HTTP 200.
 
 A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente especializada para a **Subprefeitura Vila Mariana (SUB-VM)**, compreendendo os distritos de **Vila Mariana**, **Moema** e **Saúde**, com identidade visual governamental autêntica da Prefeitura de São Paulo, estética profissional limpa (sem vícios ou traços genéricos de IA), compartilhamento reativo de estado unificado e controle de acesso baseado em papéis (RBAC):
 
@@ -53,13 +53,12 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
 
 ## Em andamento
 
-- **Em homologação:** branch `feature/vila-mariana-only` com o [recorte territorial exclusivo da SUB-VM](../plans/plano-recorte-demonstracao-sub-vm.md) validado localmente e aguardando publicação pela Railway.
 - **Em execução:** [Plano de expansão geoespacial e indicadores](../plans/plano-expansao-geoespacial-e-indicadores.md), com delimitação territorial e correlações de segurança/trânsito pendentes de atualização do progresso por fase.
 - **Em execução parcial:** [Etapa 6 — delimitação geográfica](../plans/etapa-6-delimitacao-geografica.md). Os 32 contornos GeoJSON autoritativos foram copiados para `public/data/subprefeituras/`, associados aos IDs internos da aplicação e carregados sob demanda no modo coroplético. As malhas simuladas antigas foram removidas. Permanecem pendentes a eventual simplificação controlada das geometrias e a migração da renderização para o componente `<GeoJSON />` nativo do React-Leaflet.
 
 ### Entregas concluídas
 
-- **Sprint 21 (Recorte Territorial Exclusivo da Demonstração SUB-VM) concluída e validada localmente**:
+- **Sprint 21 (Recorte Territorial Exclusivo da Demonstração SUB-VM) concluída e validada em produção**:
   - Runtime, chamados, fontes públicas, equipamentos e módulo social restritos à Subprefeitura Vila Mariana.
   - Filtros municipais substituídos pelos distritos Vila Mariana, Moema e Saúde.
   - Comparação entre subprefeituras e referências municipais removidas da interface ativa.
@@ -67,6 +66,7 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
   - Loader territorial reduzido a `vila-mariana.geojson`, preservando os outros 31 arquivos sem carregá-los.
   - Seis modos cartográficos, quatro módulos, perfis, Gemini e Kanban preservados.
   - `npm run lint`, `npm run build` e validação visual dos seis modos aprovados.
+  - Railway conectada à branch `feature/vila-mariana-only`; deployment e URL pública validados com sucesso.
   - Decisão registrada na [ADR 0019](../decisions/0019-recorte-territorial-exclusivo-sub-vm.md).
 
 - **Sprint 20 (Redesign de UI/UX Profissional, Clean e Institucional — Eliminação do Visual "AI Generated") 100% Concluída e Validada**:
@@ -256,9 +256,8 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
 
 ## Próximo passo
 
-1. **Publicar a branch de demonstração**: apontar o serviço Railway `subprefeitura` para `feature/vila-mariana-only`, acompanhar o deployment e validar a URL pública.
-2. **Retomar o plano geoespacial em execução**: identificar a próxima fase e registrar seu avanço em [plano-expansao-geoespacial-e-indicadores.md](../plans/plano-expansao-geoespacial-e-indicadores.md); manter a [Etapa 6](../plans/etapa-6-delimitacao-geografica.md) como planejada até priorização.
-3. **Homologar a versão publicada**:
+1. **Retomar o plano geoespacial em execução**: identificar a próxima fase e registrar seu avanço em [plano-expansao-geoespacial-e-indicadores.md](../plans/plano-expansao-geoespacial-e-indicadores.md); manter a [Etapa 6](../plans/etapa-6-delimitacao-geografica.md) como planejada até priorização.
+2. **Homologar a versão publicada**:
    - Validar os fluxos dos quatro módulos na URL de produção e coletar feedback de gestores e usuários finais.
    - Avaliar a legibilidade das sobreposições de mapas de calor em monitores ultrawide e projetores, e validar os indicadores públicos fictícios.
 

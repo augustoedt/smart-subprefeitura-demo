@@ -27,3 +27,4 @@ Restringir a demonstração operacional à **Subprefeitura Vila Mariana (SUB-VM)
 - Validação local dos seis modos cartográficos: aprovada.
 - Inspeção de rede: somente `vila-mariana.geojson` foi solicitado pelo modo territorial.
 - Verificação visual: barra **Vistas** ausente em Leaflet e MapLibre.
+- Railway conectada à branch `feature/vila-mariana-only`; deployment `9bfe5448-b303-4e0a-a088-e1f1c860c94c` em `SUCCESS` e URL pública com HTTP 200.
