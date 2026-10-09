@@ -53,8 +53,8 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
 
 ## Em andamento
 
-- **Planejado para etapa futura:** [Compactação e separação dos controles cartográficos](../plans/plano-compactacao-controles-cartograficos.md), reorganizando a barra em quatro dropdowns: Mapa, Ocorrências, Painéis e Exibição.
-- **Planejado para etapa futura:** [Adoção incremental do DaisyUI](../plans/plano-adocao-incremental-daisyui.md) sobre Tailwind v4, com tema institucional SUB-VM e a barra cartográfica como projeto-piloto.
+- **Piloto experimental concluído; homologação pendente:** [Compactação e separação dos controles cartográficos](../plans/plano-compactacao-controles-cartograficos.md) implementada em quatro dropdowns — Mapa, Ocorrências, Painéis e Exibição — com seis motores preservados, matriz explícita de capacidades e alinhamento responsivo sem recorte lateral.
+- **Piloto experimental concluído; sem promoção para produção:** [DaisyUI incremental](../plans/plano-adocao-incremental-daisyui.md) instalado na branch `feature/daisyui-subvm-pilot`, com tema exclusivo `subvm` e primitivo acessível `ControlDropdown`. Inclui correção responsiva do menu Exibição, legenda recolhível e expiração do toast inicial em quatro segundos. Lint, build e validação visual desktop/mobile foram aprovados. A branch `feature/vila-mariana-only` e a Railway permanecem inalteradas enquanto a homologação não for autorizada.
 - **Em execução:** [Plano de expansão geoespacial e indicadores](../plans/plano-expansao-geoespacial-e-indicadores.md), com delimitação territorial e correlações de segurança/trânsito pendentes de atualização do progresso por fase.
 - **Em execução parcial:** [Etapa 6 — delimitação geográfica](../plans/etapa-6-delimitacao-geografica.md). Os 32 contornos GeoJSON autoritativos foram copiados para `public/data/subprefeituras/`, associados aos IDs internos da aplicação e carregados sob demanda no modo coroplético. As malhas simuladas antigas foram removidas. Permanecem pendentes a eventual simplificação controlada das geometrias e a migração da renderização para o componente `<GeoJSON />` nativo do React-Leaflet.
 

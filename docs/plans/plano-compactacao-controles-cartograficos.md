@@ -1,8 +1,22 @@
 # Plano — Compactação e separação dos controles cartográficos
 
-**Status:** planejado, não implementado  
-**Registrado em:** 2026-10-08  
+**Status:** implementado e validado na branch experimental `feature/daisyui-subvm-pilot`
+
+**Registrado em:** 2026-10-08
+
 **Componente principal:** `src/components/SalaSituacao.tsx`
+
+## Resultado
+
+- A barra agora contém somente os grupos **Mapa**, **Ocorrências**, **Painéis** e **Exibição**.
+- O menu **Mapa** preserva os seis motores com rótulos curtos e descrições completas.
+- **Ocorrências** oferece Agrupadas/Individuais somente no Leaflet e informa “Definido pelo mapa” nos demais motores.
+- **Painéis** controla Lista sincronizada e Estatísticas sem alterar o mapa; ambos podem ser exibidos simultaneamente.
+- **Exibição** controla Pontos cegos e Alto contraste; Pontos cegos é desabilitado com explicação no motor 3D.
+- O antigo atalho secundário de heatmap foi eliminado; Calor permanece um modo cartográfico próprio.
+- Os menus ajustam o alinhamento ao espaço disponível para não serem cortados em telas estreitas.
+- Validações concluídas: seis seleções de mapa, árvore de acessibilidade, desktop, mobile 390 × 844, `npm run lint` e `npm run build`.
+- A implementação permanece isolada e não foi promovida para a branch acompanhada pela Railway.
 
 ## Problema
 

@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   Camera, Map as MapIcon, Layers, Filter, CheckCircle2, AlertTriangle, Clock, Calendar, 
-  Hash, MapPin, X, Flame, Eye, EyeOff, Activity, BarChart3, List,
-  Plus, Database, Shield, Users, Car, History, Sparkles, Monitor, Info, Check, SlidersHorizontal,
-  Radio, Hexagon, Globe, BookOpen, Mountain, ChevronRight, ChevronLeft, ChevronDown, Sliders
+  Hash, MapPin, X, Eye, EyeOff, Activity, BarChart3, List,
+  Plus, Database, Shield, Users, Car, History, Sparkles, Info, Check, SlidersHorizontal,
+  Radio, Hexagon, Globe, BookOpen, Mountain, ChevronRight, ChevronLeft, ChevronDown, Sliders,
+  Maximize2, Minimize2
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { subprefeituras } from '../data';
-import { Chamado, Subprefeitura, FonteDadosPublica, PontoFontePublica, HotspotCruzamento, BibliotecaPublicaGeolocalizada } from '../types';
+import { Chamado, Subprefeitura, FonteDadosPublica, PontoFontePublica, HotspotCruzamento, BibliotecaPublicaGeolocalizada, MapEngineType } from '../types';
 import { UserSession } from '../LoginTypes';
 import MapComponent from './MapComponent';
 import MapLibreMapComponent from './MapLibreMapComponent';
@@ -23,9 +24,68 @@ import { LiveIndicator } from './LiveIndicator';
 import { CATALOGO_FONTES_PUBLICAS, ROTULO_FIXO_FONTE } from '../dataPublicSources';
 import { useApp } from '../context/AppContext';
 import { executarCruzamentoCamadas } from '../utils/geoSpatial';
+import ControlDropdown from './ui/ControlDropdown';
 
 type LayerFilter = 'SOCIAL' | 'ZELADORIA' | 'INFRAESTRUTURA' | 'TODOS';
 type DistrictFilter = 'TODOS' | 'Vila Mariana' | 'Moema' | 'Saúde';
+type OccurrenceViewMode = 'CLUSTER' | 'NORMAL';
+type DemoMapEngine = Extract<
+  MapEngineType,
+  'LEAFLET' | 'MAPLIBRE_GL' | 'SATELITE_ORTOFOTO' | 'CHOROPLETH_32_SUBS' | 'SERVICE_BUFFERS' | 'HEATMAP_KERNEL'
+>;
+
+interface MapEngineControlConfig {
+  shortLabel: string;
+  description: string;
+  occurrenceControl: 'CONFIGURABLE' | 'DEFINED_BY_ENGINE';
+  blindSpots: boolean;
+}
+
+const MAP_ENGINE_CONTROL_CONFIG: Record<DemoMapEngine, MapEngineControlConfig> = {
+  LEAFLET: {
+    shortLabel: 'OSM',
+    description: 'Marcadores e agrupamentos operacionais.',
+    occurrenceControl: 'CONFIGURABLE',
+    blindSpots: true
+  },
+  MAPLIBRE_GL: {
+    shortLabel: '3D',
+    description: 'Mapa vetorial com rotação e perspectiva.',
+    occurrenceControl: 'DEFINED_BY_ENGINE',
+    blindSpots: false
+  },
+  SATELITE_ORTOFOTO: {
+    shortLabel: 'Satélite',
+    description: 'Imagem aérea com vias e logradouros.',
+    occurrenceControl: 'DEFINED_BY_ENGINE',
+    blindSpots: true
+  },
+  CHOROPLETH_32_SUBS: {
+    shortLabel: 'Territorial',
+    description: 'Limite da SUB-VM e indicadores.',
+    occurrenceControl: 'DEFINED_BY_ENGINE',
+    blindSpots: true
+  },
+  SERVICE_BUFFERS: {
+    shortLabel: 'Buffers',
+    description: 'Raios de cobertura de equipamentos.',
+    occurrenceControl: 'DEFINED_BY_ENGINE',
+    blindSpots: true
+  },
+  HEATMAP_KERNEL: {
+    shortLabel: 'Calor',
+    description: 'Densidade espacial de ocorrências.',
+    occurrenceControl: 'DEFINED_BY_ENGINE',
+    blindSpots: true
+  }
+};
+
+const FALLBACK_ENGINE_CONFIG: MapEngineControlConfig = {
+  shortLabel: 'Mapa',
+  description: 'Visualização cartográfica.',
+  occurrenceControl: 'DEFINED_BY_ENGINE',
+  blindSpots: false
+};
 
 const LAYER_MAPPING: Record<LayerFilter, string[]> = {
   SOCIAL: ['MORADOR_RUA', 'DESFAZIMENTO'],
@@ -35,11 +95,12 @@ const LAYER_MAPPING: Record<LayerFilter, string[]> = {
 };
 
 export default function SalaSituacao({ chamados, session }: { chamados: Chamado[], session: UserSession }) {
-  const [viewMode, setViewMode] = useState<'HEATMAP' | 'CLUSTER' | 'NORMAL' | 'LISTA'>('CLUSTER');
+  const [viewMode, setViewMode] = useState<OccurrenceViewMode>('CLUSTER');
   const [showPontosCegos, setShowPontosCegos] = useState(false);
+  const [isListOpen, setIsListOpen] = useState(false);
   
   const [activeLayer, setActiveLayer] = useState<LayerFilter>('TODOS');
-  const [heatmapType, setHeatmapType] = useState<'DENSIDADE' | 'CRITICIDADE'>('DENSIDADE');
+  const heatmapType = 'DENSIDADE' as const;
   const [selectedDistrict, setSelectedDistrict] = useState<DistrictFilter>('TODOS');
   const selectedSubId = '2';
   const [selectedChamado, setSelectedChamado] = useState<Chamado | null>(null);
@@ -71,6 +132,37 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
     highContrast: highContrastMode,
     setHighContrast: setHighContrastMode
   } = useApp();
+
+  const engineControlConfig =
+    MAP_ENGINE_CONTROL_CONFIG[activeMapEngine as DemoMapEngine] || FALLBACK_ENGINE_CONFIG;
+  const occurrenceControlDisabled = engineControlConfig.occurrenceControl !== 'CONFIGURABLE';
+  const occurrenceSummary = occurrenceControlDisabled
+    ? 'Definido pelo mapa'
+    : viewMode === 'CLUSTER'
+      ? 'Agrupadas'
+      : 'Individuais';
+  const panelsSummary = isListOpen && isAnalyticsOpen
+    ? '2 ativos'
+    : isListOpen
+      ? 'Lista'
+      : isAnalyticsOpen
+        ? 'Estatísticas'
+        : 'Fechados';
+  const activeDisplayCount = Number(showPontosCegos && engineControlConfig.blindSpots) + Number(highContrastMode);
+  const displaySummary = activeDisplayCount === 0
+    ? 'Padrão'
+    : activeDisplayCount === 2
+      ? '2 ativos'
+      : showPontosCegos && engineControlConfig.blindSpots
+        ? 'Pontos cegos'
+        : 'Contraste';
+
+  const handleMapEngineSelect = (engine: DemoMapEngine) => {
+    setActiveMapEngine(engine);
+    if (!MAP_ENGINE_CONTROL_CONFIG[engine].blindSpots) {
+      setShowPontosCegos(false);
+    }
+  };
 
   const [isAddSourceOpen, setIsAddSourceOpen] = useState(false);
   const [isCrossPanelOpen, setIsCrossPanelOpen] = useState(false);
@@ -363,30 +455,28 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
               />
             )}
             
-            {/* Mobile Toggle Pill for Legend */}
-            {!focusMode && (
-              <div className="sm:hidden absolute bottom-3 left-3 z-[999]">
+            {/* Botão compacto para restaurar a legenda minimizada */}
+            {!focusMode && !isLegendExpanded && (
+              <div className="absolute bottom-16 left-3 z-[35] sm:left-4">
                 <button
-                  onClick={() => setIsLegendExpanded(!isLegendExpanded)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border shadow-lg flex items-center gap-1.5 backdrop-blur-md transition-all ${
-                    isLegendExpanded
-                      ? 'bg-blue-600 text-white border-blue-700'
-                      : highContrastMode
-                      ? 'bg-slate-900/90 text-amber-400 border-slate-700'
-                      : 'bg-white/90 text-slate-800 border-slate-200'
+                  type="button"
+                  onClick={() => setIsLegendExpanded(true)}
+                  className={`btn btn-sm btn-square min-h-9 h-9 w-9 border shadow-lg backdrop-blur-md ${
+                    highContrastMode
+                      ? 'border-slate-700 bg-slate-900/90 text-amber-400 hover:bg-slate-800'
+                      : 'border-slate-200 bg-white/95 text-blue-600 hover:bg-slate-50'
                   }`}
+                  title="Maximizar Legenda & Camadas"
+                  aria-label="Maximizar Legenda & Camadas"
                 >
-                  <Layers className="w-3.5 h-3.5 text-blue-500" />
-                  <span>Legenda</span>
+                  <Maximize2 className="h-4 w-4" />
                 </button>
               </div>
             )}
 
             {/* Floating Legend com contraste adaptável e suporte a fontes públicas */}
-            {!focusMode && (
-              <div className={`absolute bottom-12 left-3 sm:bottom-4 sm:left-4 z-[999] px-3.5 py-3 rounded-xl border shadow-lg pointer-events-auto max-w-[280px] sm:max-w-xs transition-all backdrop-blur-md ${
-                isLegendExpanded ? 'block' : 'hidden sm:block'
-              } ${
+            {!focusMode && isLegendExpanded && (
+              <div className={`absolute bottom-16 left-3 sm:left-4 z-[35] px-3.5 py-3 rounded-xl border shadow-lg pointer-events-auto max-w-[280px] sm:max-w-xs transition-all backdrop-blur-md ${
                 highContrastMode 
                   ? 'bg-slate-950/90 border-slate-700 text-white shadow-2xl' 
                   : 'bg-white/95 border-slate-200 text-slate-800'
@@ -402,11 +492,13 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                     </span>
                   )}
                   <button 
+                    type="button"
                     onClick={() => setIsLegendExpanded(false)}
-                    className="sm:hidden p-1 text-slate-400 hover:text-slate-600"
-                    title="Fechar Legenda"
+                    className="btn btn-ghost btn-xs btn-square text-slate-400 hover:text-slate-600"
+                    title="Minimizar Legenda & Camadas"
+                    aria-label="Minimizar Legenda & Camadas"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <Minimize2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>
@@ -474,7 +566,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
         {!focusMode && (
           <>
             {/* Top Control Bar HUD */}
-            <div className="absolute top-3 left-3 right-3 sm:left-4 sm:right-4 z-30 pointer-events-none flex flex-wrap items-center justify-between gap-2.5">
+            <div className="absolute top-3 left-3 right-3 sm:left-4 sm:right-4 z-[35] pointer-events-none flex flex-wrap items-center justify-between gap-2.5">
               {/* Left Cluster: Território, Camadas & Fontes */}
               <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 p-1.5 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-2xl backdrop-blur-md text-white">
                 {/* Filtro intraterritorial da SUB-VM */}
@@ -545,90 +637,99 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
             </button>
           </div>
 
-          {/* Right Cluster: Motor de Mapa, Modos de Visão e Painéis */}
-          <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 p-1.5 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-2xl backdrop-blur-md text-white">
-            {/* Seletor Rápido de Motores */}
-            <div className="flex items-center gap-1 px-2 py-1 bg-slate-800/90 rounded-xl border border-slate-700/80">
-              <MapIcon className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-              <select
-                className="bg-transparent text-xs font-semibold text-white focus:ring-0 cursor-pointer outline-none max-w-[130px] sm:max-w-none"
-                value={activeMapEngine}
-                onChange={(e) => setActiveMapEngine(e.target.value as any)}
-                title="Selecione o motor cartográfico"
-              >
-                {availableEngines.map((eng) => (
-                  <option key={eng.id} value={eng.id} className="bg-slate-800 text-white">
-                    {eng.nome} ({eng.badge})
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Right Cluster: quatro grupos de controle com responsabilidades separadas */}
+          <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 rounded-2xl border border-slate-700/80 bg-slate-900/90 p-1.5 text-white shadow-2xl backdrop-blur-md">
+            <ControlDropdown
+              label="Mapa"
+              value={engineControlConfig.shortLabel}
+              align="start"
+              icon={<MapIcon className="h-3.5 w-3.5 shrink-0 text-sky-400" />}
+              options={availableEngines.map((engine) => {
+                const engineId = engine.id as DemoMapEngine;
+                const config = MAP_ENGINE_CONTROL_CONFIG[engineId] || FALLBACK_ENGINE_CONFIG;
+                return {
+                  id: engine.id,
+                  label: config.shortLabel,
+                  description: config.description,
+                  selected: activeMapEngine === engine.id,
+                  onSelect: () => handleMapEngineSelect(engineId)
+                };
+              })}
+            />
 
-            {/* Modos de Visão (Cluster, Heatmap e Lista) */}
-            <div className="flex items-center gap-0.5 bg-slate-800/90 p-0.5 rounded-xl border border-slate-700/80">
-              <button
-                onClick={() => setViewMode('CLUSTER')}
-                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'CLUSTER' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
-                title="Marcadores agrupados em clusters"
-              >
-                <Layers className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setViewMode('HEATMAP')}
-                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'HEATMAP' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
-                title="Mapa de calor (densidade)"
-              >
-                <Flame className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setViewMode('LISTA')}
-                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'LISTA' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
-                title="Lista sincronizada"
-              >
-                <List className="w-3.5 h-3.5" />
-              </button>
+            <ControlDropdown
+              label="Ocorrências"
+              value={occurrenceSummary}
+              align="start"
+              icon={<Layers className="h-3.5 w-3.5 shrink-0 text-blue-400" />}
+              disabled={occurrenceControlDisabled}
+              disabledReason={occurrenceControlDisabled ? 'A representação é definida automaticamente pelo mapa selecionado.' : undefined}
+              options={[
+                {
+                  id: 'cluster',
+                  label: 'Agrupadas',
+                  description: 'Agrupa ocorrências próximas para reduzir sobreposição.',
+                  selected: viewMode === 'CLUSTER',
+                  onSelect: () => setViewMode('CLUSTER')
+                },
+                {
+                  id: 'normal',
+                  label: 'Individuais',
+                  description: 'Exibe cada ocorrência como um marcador independente.',
+                  selected: viewMode === 'NORMAL',
+                  onSelect: () => setViewMode('NORMAL')
+                }
+              ]}
+            />
 
-            </div>
+            <ControlDropdown
+              label="Painéis"
+              value={panelsSummary}
+              align="start"
+              icon={<List className="h-3.5 w-3.5 shrink-0 text-violet-400" />}
+              selectionMode="multiple"
+              options={[
+                {
+                  id: 'lista',
+                  label: 'Lista sincronizada',
+                  description: 'Abre a relação de chamados sem alterar a representação do mapa.',
+                  selected: isListOpen,
+                  onSelect: () => setIsListOpen((open) => !open)
+                },
+                {
+                  id: 'estatisticas',
+                  label: 'Estatísticas',
+                  description: 'Exibe indicadores e distribuição por categoria.',
+                  selected: isAnalyticsOpen,
+                  onSelect: () => setIsAnalyticsOpen((open) => !open)
+                }
+              ]}
+            />
 
-            {/* Pontos Cegos Toggle */}
-            <button
-              onClick={() => setShowPontosCegos(!showPontosCegos)}
-              className={`p-1.5 rounded-xl border transition-all ${
-                showPontosCegos
-                  ? 'bg-red-600 text-white border-red-500 shadow-md ring-1 ring-red-400'
-                  : 'bg-slate-800/90 text-slate-400 border-slate-700 hover:text-white'
-              }`}
-              title="Destacar áreas com acúmulo de atrasos operacionais (Pontos Cegos)"
-            >
-              {showPontosCegos ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-            </button>
-
-            {/* Alto Contraste */}
-            <button
-              onClick={() => setHighContrastMode(!highContrastMode)}
-              className={`p-1.5 rounded-xl border transition-all ${
-                highContrastMode
-                  ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md'
-                  : 'bg-slate-800/90 text-slate-400 border-slate-700 hover:text-white'
-              }`}
-              title="Modo Alto Contraste para projeção em telão"
-            >
-              <Monitor className="w-3.5 h-3.5 text-amber-400" />
-            </button>
-
-            {/* Painel de Análise Toggle Button */}
-            <button
-                onClick={() => setIsAnalyticsOpen(!isAnalyticsOpen)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-xl transition-all border ${
-                  isAnalyticsOpen
-                    ? 'bg-blue-600 text-white border-blue-500 shadow-md ring-1 ring-blue-400'
-                    : 'bg-slate-800/90 text-slate-300 border-slate-700 hover:text-white'
-                }`}
-                title={isAnalyticsOpen ? 'Ocultar painel de estatísticas' : 'Mostrar painel de estatísticas da região'}
-              >
-                <BarChart3 className="w-3.5 h-3.5 text-sky-400" />
-                <span className="hidden sm:inline">Estatísticas</span>
-              </button>
+            <ControlDropdown
+              label="Exibição"
+              value={displaySummary}
+              icon={<Sliders className="h-3.5 w-3.5 shrink-0 text-amber-400" />}
+              selectionMode="multiple"
+              options={[
+                {
+                  id: 'pontos-cegos',
+                  label: 'Pontos cegos',
+                  description: 'Destaca áreas com acúmulo de chamados atrasados.',
+                  disabled: !engineControlConfig.blindSpots,
+                  disabledReason: !engineControlConfig.blindSpots ? 'Indisponível no motor 3D.' : undefined,
+                  selected: showPontosCegos && engineControlConfig.blindSpots,
+                  onSelect: () => setShowPontosCegos((show) => !show)
+                },
+                {
+                  id: 'alto-contraste',
+                  label: 'Alto contraste',
+                  description: 'Otimiza cores e legibilidade para apresentação em telão.',
+                  selected: highContrastMode,
+                  onSelect: () => setHighContrastMode((enabled) => !enabled)
+                }
+              ]}
+            />
           </div>
         </div>
 
@@ -723,9 +824,12 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
           </div>
         )}
 
+        {/* Painéis independentes: empilhados no mobile e lado a lado em telas maiores */}
+        {!selectedChamado && !selectedPublicPoint && (isListOpen || isAnalyticsOpen) && !focusMode && (
+          <div className="absolute left-4 right-4 top-20 bottom-16 z-30 flex flex-col gap-3 pointer-events-none sm:left-auto sm:flex-row">
         {/* List View Floating Panel */}
-        {viewMode === 'LISTA' && !selectedChamado && !selectedPublicPoint && !focusMode && (
-           <div className={`absolute top-20 right-4 bottom-16 w-80 sm:w-96 border rounded-2xl shadow-2xl flex flex-col shrink-0 overflow-hidden z-30 pointer-events-auto backdrop-blur-xl ${
+        {isListOpen && (
+           <div className={`w-full sm:w-80 lg:w-96 min-h-0 flex-1 border rounded-2xl shadow-2xl flex flex-col shrink-0 overflow-hidden pointer-events-auto backdrop-blur-xl ${
              highContrastMode ? 'bg-slate-900/95 border-slate-700 text-white' : 'bg-white/95 border-slate-200 text-slate-900 shadow-slate-900/20'
            }`}>
               <div className={`px-5 py-4 border-b flex items-center justify-between ${
@@ -735,7 +839,17 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                   <List className="w-4 h-4 text-blue-500" />
                   Lista Sincronizada
                 </h3>
-                <span className="text-xs text-slate-400 font-mono">{filteredChamados.length} chamados</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400 font-mono">{filteredChamados.length} chamados</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsListOpen(false)}
+                    className="btn btn-ghost btn-xs btn-square text-slate-400 hover:text-slate-700"
+                    aria-label="Fechar lista sincronizada"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
               <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
                  {filteredChamados.slice(0, 50).map(c => (
@@ -770,8 +884,8 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
         )}
 
         {/* Region Analysis Floating Panel */}
-        {!selectedChamado && !selectedPublicPoint && viewMode !== 'LISTA' && isAnalyticsOpen && !focusMode && (
-           <div className={`absolute top-20 right-4 bottom-16 w-80 sm:w-96 border rounded-2xl shadow-2xl flex flex-col shrink-0 overflow-hidden z-30 pointer-events-auto backdrop-blur-xl animate-in slide-in-from-right-6 duration-200 ${
+        {isAnalyticsOpen && (
+           <div className={`w-full sm:w-80 lg:w-96 min-h-0 flex-1 border rounded-2xl shadow-2xl flex flex-col shrink-0 overflow-hidden pointer-events-auto backdrop-blur-xl animate-in slide-in-from-right-6 duration-200 ${
              highContrastMode ? 'bg-slate-900/95 border-slate-700 text-white' : 'bg-white/95 border-slate-200 text-slate-900 shadow-slate-900/20'
            }`}>
               <div className={`px-4 py-3 border-b flex items-center justify-between gap-2 shrink-0 ${
@@ -907,6 +1021,8 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                  </div>
               </div>
            </div>
+        )}
+          </div>
         )}
 
         {/* Side Panel for Chamado Details */}
