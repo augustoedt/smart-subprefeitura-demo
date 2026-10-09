@@ -27,7 +27,7 @@ import {
   Truck,
   CheckSquare
 } from 'lucide-react';
-import { Chamado, ZapMessage, ZapChatSession, CategoriaChamado } from '../types';
+import { Chamado, ZapMessage, ZapChatSession, CategoriaChamado, PainelAdminTab } from '../types';
 import { subprefeituras } from '../data';
 import { 
   FOTOS_SIMULADAS_ZAP, 
@@ -47,7 +47,10 @@ interface SimulacaoZapProps {
   zapSession: ZapChatSession;
   setZapSession: React.Dispatch<React.SetStateAction<ZapChatSession>>;
   session: UserSession | null;
-  onNavigateToSection?: (section: 'painel_admin' | 'sala_situacao' | 'app_campo') => void;
+  onNavigateToSection?: (
+    section: 'painel_admin' | 'sala_situacao' | 'app_campo',
+    adminTab?: PainelAdminTab,
+  ) => void;
 }
 
 export default function SimulacaoZap({ 
@@ -56,9 +59,12 @@ export default function SimulacaoZap({
   onCriarChamado, 
   zapSession, 
   setZapSession,
+  session,
   onNavigateToSection
 }: SimulacaoZapProps) {
   const { addNotification } = useApp();
+  const canAccessPainelAdmin = session?.role === 'CENTRAL' || session?.role === 'GESTOR';
+  const canAccessSalaSituacao = session?.role === 'CENTRAL' || session?.role === 'GESTOR';
   const [modoSimulacao, setModoSimulacao] = useState<'CIDADAO' | 'TRABALHADOR'>('CIDADAO');
   const [workerSession, setWorkerSession] = useState<ZapChatSession>(MOCK_CONVERSA_TRABALHADOR_INICIAL);
   
@@ -288,7 +294,8 @@ export default function SimulacaoZap({
       titulo: 'Novo Chamado SP156 Aberto',
       mensagem: `Protocolo ${novoProtocolo} (${selectedCategoria.replace('_', ' ')}) inserido na malha operacional com sucesso.`,
       tipo: 'sucesso',
-      linkSection: 'painel_admin',
+      linkSection: canAccessPainelAdmin ? 'painel_admin' : undefined,
+      linkAdminTab: canAccessPainelAdmin ? 'KANBAN' : undefined,
       protocolo: novoProtocolo
     });
 
@@ -395,7 +402,8 @@ export default function SimulacaoZap({
       titulo: 'OS em Atendimento via WhatsApp',
       mensagem: `Viatura V-04 iniciou deslocamento e execução da OS ${targetProt} pelo WhatsApp.`,
       tipo: 'info',
-      linkSection: 'painel_admin',
+      linkSection: canAccessPainelAdmin ? 'painel_admin' : undefined,
+      linkAdminTab: canAccessPainelAdmin ? 'KANBAN' : undefined,
       protocolo: targetProt
     });
 
@@ -470,7 +478,12 @@ export default function SimulacaoZap({
     if (setChamados) {
       setChamados(prev => prev.map(c => 
         (c.protocolo === targetProt || c.id === chamados[0]?.id)
-          ? { ...c, status: 'AGUARDANDO_APROVACAO', fotoDepois }
+          ? {
+              ...c,
+              status: 'AGUARDANDO_APROVACAO',
+              fotoAntes: FOTOS_TRABALHADOR_ZAP.ANTES_TAPA_BURACO,
+              fotoDepois,
+            }
           : c
       ));
     }
@@ -479,7 +492,8 @@ export default function SimulacaoZap({
       titulo: 'OS Concluída via WhatsApp pelo Técnico',
       mensagem: `Viatura V-04 finalizou a OS ${targetProt} pelo WhatsApp. Vistoria aguardando aprovação do Gestor no Kanban.`,
       tipo: 'sucesso',
-      linkSection: 'painel_admin',
+      linkSection: canAccessPainelAdmin ? 'painel_admin' : undefined,
+      linkAdminTab: canAccessPainelAdmin ? 'KANBAN' : undefined,
       protocolo: targetProt
     });
 
@@ -519,7 +533,7 @@ export default function SimulacaoZap({
       titulo: '⚠️ Risco Crítico Escalar via WhatsApp',
       mensagem: `Técnico da Viatura V-04 reportou interferência de risco elétrico na OS ${targetProt}. Prioridade elevada para URGENTE.`,
       tipo: 'urgente',
-      linkSection: 'sala_situacao',
+      linkSection: canAccessSalaSituacao ? 'sala_situacao' : undefined,
       protocolo: targetProt
     });
 
@@ -609,9 +623,23 @@ export default function SimulacaoZap({
           handleWorkerEscalarRisco();
         }, 600);
       } else if (opcao.includes('Kanban')) {
-        onNavigateToSection?.('painel_admin');
+        if (canAccessPainelAdmin) {
+          onNavigateToSection?.('painel_admin', 'KANBAN');
+        } else {
+          adicionarMensagem({
+            remetente: 'BOT_SP156',
+            texto: 'A Triagem/Kanban é restrita aos perfis de gestão. A atualização da OS já foi enviada à supervisão.',
+          });
+        }
       } else if (opcao.includes('Sala de Situação') || opcao.includes('Mapa')) {
-        onNavigateToSection?.('sala_situacao');
+        if (canAccessSalaSituacao) {
+          onNavigateToSection?.('sala_situacao');
+        } else {
+          adicionarMensagem({
+            remetente: 'BOT_SP156',
+            texto: 'A Sala de Situação é restrita aos perfis de gestão. O alerta já foi encaminhado à supervisão.',
+          });
+        }
       } else {
         handleEnviarMensagemTexto(opcao);
       }
@@ -626,9 +654,23 @@ export default function SimulacaoZap({
     } else if (opcao.includes('Emitir Protocolo') || opcao.includes('Confirmar e Gerar') || opcao.includes('Confirmar Abertura')) {
       handleConcluirAberturaChamado();
     } else if (opcao.includes('Kanban')) {
-      onNavigateToSection?.('painel_admin');
+      if (canAccessPainelAdmin) {
+        onNavigateToSection?.('painel_admin', 'KANBAN');
+      } else {
+        adicionarMensagem({
+          remetente: 'BOT_SP156',
+          texto: 'A Triagem/Kanban é restrita aos perfis de gestão. Você pode acompanhar o protocolo por este canal.',
+        });
+      }
     } else if (opcao.includes('Mapa')) {
-      onNavigateToSection?.('sala_situacao');
+      if (canAccessSalaSituacao) {
+        onNavigateToSection?.('sala_situacao');
+      } else {
+        adicionarMensagem({
+          remetente: 'BOT_SP156',
+          texto: 'A visualização cartográfica é restrita aos perfis de gestão. Você pode acompanhar o protocolo por este canal.',
+        });
+      }
     } else if (opcao.includes('Excelente')) {
       handleAvaliarEstrelas(5);
     } else if (opcao.includes('Bom')) {

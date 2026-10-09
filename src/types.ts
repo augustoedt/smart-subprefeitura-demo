@@ -31,6 +31,7 @@ export interface Chamado {
   dataAbertura: string; // ISO string
   isAtrasado: boolean;
   endereco?: string;
+  fotoAntes?: string;
   fotoDepois?: string;
   origem?: 'SP156_WEB' | 'WHATSAPP_SP156' | 'APP_CAMPO' | 'TELEFONE_156';
   telefoneCidadao?: string;
@@ -290,6 +291,8 @@ export interface ChangelogItem {
   destaques: string[];
 }
 
+export type PainelAdminTab = 'COCKPIT' | 'KANBAN' | 'WHATSAPP';
+
 // Tipos do Sistema Global de Notificações Toast Institucionais
 export interface SystemNotification {
   id: string;
@@ -298,6 +301,7 @@ export interface SystemNotification {
   tipo: 'sucesso' | 'info' | 'alerta' | 'urgente';
   timestamp: string;
   linkSection?: 'sala_situacao' | 'painel_admin' | 'app_campo' | 'simulacao_zap' | 'modulo_social';
+  linkAdminTab?: PainelAdminTab;
   protocolo?: string;
 }
 

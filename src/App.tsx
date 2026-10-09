@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Sidebar, Section } from './components/Sidebar';
 import { mockChamados, subprefeituras } from './data';
 import SalaSituacao from './components/SalaSituacao';
@@ -15,7 +15,7 @@ import { X, Info, LogOut, User, Building2, HardHat, MessageSquare, Menu, Map, La
 import { UserSession } from './LoginTypes';
 import LoginScreen from './components/LoginScreen';
 import ModalSobreProjeto from './components/ModalSobreProjeto';
-import { ZapChatSession, Chamado } from './types';
+import { ZapChatSession, Chamado, PainelAdminTab } from './types';
 import { MOCK_CONVERSA_INICIAL, gerarTimestampAtual } from './dataZap';
 import { AppProvider } from './context/AppContext';
 import BrasaoSaoPaulo from './components/BrasaoSaoPaulo';
@@ -24,9 +24,10 @@ import AppOverlays from './components/AppOverlays';
 export default function App() {
   const [session, setSession] = useState<UserSession | null>(null);
   const [currentSection, setCurrentSection] = useState<Section>('sala_situacao');
-  const [painelAdminInitialTab, setPainelAdminInitialTab] = useState<'COCKPIT' | 'KANBAN' | 'WHATSAPP'>('COCKPIT');
+  const [painelAdminTab, setPainelAdminTab] = useState<PainelAdminTab>('COCKPIT');
   const [chamados, setChamados] = useState<Chamado[]>(mockChamados);
   const [zapSession, setZapSession] = useState<ZapChatSession>(MOCK_CONVERSA_INICIAL);
+  const previousChamadosRef = useRef<Chamado[]>(mockChamados);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -35,39 +36,44 @@ export default function App() {
     setChamados((prev) => prev.filter((chamado) => chamado.subprefeituraId === '2'));
   }, []);
 
-  const updateChamadosComNotificacao: React.Dispatch<React.SetStateAction<Chamado[]>> = (action) => {
-    setChamados(prev => {
-      const next = typeof action === 'function' ? action(prev) : action;
-      
-      // Verifica se houve transição de status para CONCLUIDO
-      const recemConcluido = next.find(n => {
-        const antigo = prev.find(p => p.id === n.id);
-        return antigo && antigo.status !== 'CONCLUIDO' && n.status === 'CONCLUIDO';
-      });
+  useEffect(() => {
+    const previousChamados = previousChamadosRef.current;
+    const recemConcluido = chamados.find((chamado) => {
+      const anterior = previousChamados.find((item) => item.id === chamado.id);
+      return anterior && anterior.status !== 'CONCLUIDO' && chamado.status === 'CONCLUIDO';
+    });
 
-      if (recemConcluido) {
-        setZapSession(zapPrev => ({
-          ...zapPrev,
-          mensagens: [
-            ...zapPrev.mensagens,
-            {
-              id: `push-conclusao-${Date.now()}`,
-              remetente: 'BOT_SP156',
-              texto: `🔔 **Aviso Oficial SP156**: A ordem de serviço referente ao protocolo **${recemConcluido.protocolo}** acaba de ser CONCLUÍDA pela equipe técnica de campo com foto comprobatória georreferenciada!`,
-              timestamp: gerarTimestampAtual(),
-              statusEnvio: 'LIDO',
-              tipoAnexo: 'FOTO',
-              anexoUrl: recemConcluido.fotoDepois || 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=600&auto=format&fit=crop&q=80',
-              opcoesRespostaRapida: [
-                '⭐ Avaliar este Atendimento',
-                '✅ Confirmar Recebimento',
-                '🚨 Reabrir se não resolvido'
-              ]
-            }
+    previousChamadosRef.current = chamados;
+
+    if (!recemConcluido) return;
+
+    setZapSession((zapPrev) => ({
+      ...zapPrev,
+      mensagens: [
+        ...zapPrev.mensagens,
+        {
+          id: `push-conclusao-${crypto.randomUUID()}`,
+          remetente: 'BOT_SP156',
+          texto: recemConcluido.fotoDepois
+            ? `🔔 **Aviso Oficial SP156**: A ordem de serviço referente ao protocolo **${recemConcluido.protocolo}** foi CONCLUÍDA com evidência fotográfica registrada pela equipe técnica.`
+            : `🔔 **Aviso Oficial SP156**: A ordem de serviço referente ao protocolo **${recemConcluido.protocolo}** foi encerrada no fluxo operacional.`,
+          timestamp: gerarTimestampAtual(),
+          statusEnvio: 'LIDO',
+          tipoAnexo: recemConcluido.fotoDepois ? 'FOTO' : 'TEXTO',
+          anexoUrl: recemConcluido.fotoDepois,
+          opcoesRespostaRapida: [
+            '⭐ Avaliar este Atendimento',
+            '✅ Confirmar Recebimento',
+            '🚨 Reabrir se não resolvido'
           ]
-        }));
-      }
+        }
+      ]
+    }));
+  }, [chamados]);
 
+  const updateChamadosComNotificacao: React.Dispatch<React.SetStateAction<Chamado[]>> = (action) => {
+    setChamados((prev) => {
+      const next = typeof action === 'function' ? action(prev) : action;
       return next.filter((chamado) => chamado.subprefeituraId === '2');
     });
   };
@@ -77,10 +83,27 @@ export default function App() {
     setChamados(prev => [novoChamado, ...prev]);
   };
 
+  const handleNavigateToSection = (section: Section, adminTab?: PainelAdminTab): boolean => {
+    const allowedSectionsByRole: Record<Exclude<UserSession['role'], null>, Section[]> = {
+      CENTRAL: ['sala_situacao', 'painel_admin', 'app_campo', 'simulacao_zap', 'modulo_social'],
+      GESTOR: ['sala_situacao', 'painel_admin'],
+      FUNCIONARIO: ['app_campo', 'simulacao_zap'],
+      ASSISTENTE_SOCIAL: ['modulo_social'],
+    };
+
+    if (!session?.role || !allowedSectionsByRole[session.role].includes(section)) return false;
+
+    if (section === 'painel_admin' && adminTab) {
+      setPainelAdminTab(adminTab);
+    }
+    setCurrentSection(section);
+    return true;
+  };
+
   if (!session) {
     return <LoginScreen onLogin={(s) => {
       setSession(s);
-      setPainelAdminInitialTab('COCKPIT');
+      setPainelAdminTab('COCKPIT');
       if (s.role === 'FUNCIONARIO') {
         setCurrentSection('app_campo');
       } else if (s.role === 'ASSISTENTE_SOCIAL') {
@@ -174,7 +197,7 @@ export default function App() {
         <Sidebar 
           currentSection={currentSection} 
           onSectionChange={(sec) => {
-            setCurrentSection(sec);
+            handleNavigateToSection(sec);
             setIsMobileMenuOpen(false);
           }} 
           onOpenAbout={() => setIsAboutOpen(true)}
@@ -231,17 +254,15 @@ export default function App() {
             chamados={chamados}
             setChamados={updateChamadosComNotificacao}
             session={session}
-            initialTab={painelAdminInitialTab}
+            activeTab={painelAdminTab}
+            onActiveTabChange={setPainelAdminTab}
           />
         ) : currentSection === 'app_campo' ? (
           <AppCampo
             chamados={chamados}
             setChamados={updateChamadosComNotificacao}
             session={session}
-            onNavigateToTriagem={() => {
-              setPainelAdminInitialTab('KANBAN');
-              setCurrentSection('painel_admin');
-            }}
+            onNavigateToTriagem={() => handleNavigateToSection('painel_admin', 'KANBAN')}
           />
         ) : currentSection === 'simulacao_zap' ? (
           <SimulacaoZap 
@@ -251,7 +272,7 @@ export default function App() {
             zapSession={zapSession}
             setZapSession={setZapSession}
             session={session}
-            onNavigateToSection={(sec) => setCurrentSection(sec)}
+            onNavigateToSection={handleNavigateToSection}
           />
         ) : currentSection === 'modulo_social' ? (
           <ModuloSocial session={session} />
@@ -281,7 +302,7 @@ export default function App() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setCurrentSection(tab.id)}
+                onClick={() => handleNavigateToSection(tab.id)}
                 className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all min-h-[44px] min-w-[56px] ${
                   isActive 
                     ? 'text-blue-400 font-bold bg-blue-950/60' 
@@ -307,7 +328,7 @@ export default function App() {
         {/* Global Toasts and Pitch Tour Overlays */}
         <AppOverlays
           currentSection={currentSection}
-          onNavigateToSection={(sec) => setCurrentSection(sec)}
+          onNavigateToSection={handleNavigateToSection}
         />
       </div>
     </AppProvider>

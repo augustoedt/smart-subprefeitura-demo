@@ -141,6 +141,9 @@ const SLA_HORAS_POR_CATEGORIA: Record<CategoriaChamado, number> = {
   CALCADA: 120,
 };
 
+const FOTO_CAMPO_ANTES = 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&q=80&w=800&h=600';
+const FOTO_CAMPO_DEPOIS = 'https://images.unsplash.com/photo-1449844908441-8829872d2607?auto=format&fit=crop&q=80&w=800&h=600';
+
 // Helper de cálculo de SLA unificado com Kanban
 function getSlaInfo(chamado: Chamado) {
   const slaHoras = SLA_HORAS_POR_CATEGORIA[chamado.categoria] || 48;
@@ -316,8 +319,13 @@ export default function AppCampo({ chamados, setChamados, session, onNavigateToT
     const chamadoFinalizado = chamados.find(c => c.id === selectedChamadoId);
 
     setChamados(prev => prev.map(c => 
-      c.id === selectedChamadoId 
-        ? { ...c, status: 'AGUARDANDO_APROVACAO' } 
+      c.id === selectedChamadoId
+        ? {
+            ...c,
+            status: 'AGUARDANDO_APROVACAO',
+            fotoAntes: FOTO_CAMPO_ANTES,
+            fotoDepois: FOTO_CAMPO_DEPOIS,
+          }
         : c
     ));
 
@@ -329,6 +337,7 @@ export default function AppCampo({ chamados, setChamados, session, onNavigateToT
         mensagem: `OS ${chamadoFinalizado.protocolo} enviada para "Aguardando Aprovação" com fotos antes/depois e checklist 100% conforme.`,
         tipo: 'sucesso',
         linkSection: canAccessTriagem ? 'painel_admin' : undefined,
+        linkAdminTab: canAccessTriagem ? 'KANBAN' : undefined,
         protocolo: chamadoFinalizado.protocolo
       });
 
@@ -364,6 +373,7 @@ export default function AppCampo({ chamados, setChamados, session, onNavigateToT
           mensagem: `OS ${chamadoEscalado.protocolo} marcou risco ativo não resolvido no checklist. Reclassificada como URGENTE.`,
           tipo: 'urgente',
           linkSection: session.role === 'CENTRAL' || session.role === 'GESTOR' ? 'painel_admin' : undefined,
+          linkAdminTab: session.role === 'CENTRAL' || session.role === 'GESTOR' ? 'KANBAN' : undefined,
           protocolo: chamadoEscalado.protocolo
         });
       }

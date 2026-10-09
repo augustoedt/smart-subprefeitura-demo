@@ -3,13 +3,16 @@ import {
   Sparkles, ChevronLeft, ChevronRight, X, Play, CheckCircle2, 
   ExternalLink, HelpCircle, ShieldCheck, Target, Award
 } from 'lucide-react';
-import { PitchTourStep } from '../types';
+import { PainelAdminTab, PitchTourStep } from '../types';
 import { PITCH_TOUR_STEPS } from '../dataPitchTour';
 import BrasaoSaoPaulo from './BrasaoSaoPaulo';
 
 interface PitchModeBarProps {
   currentSection: 'sala_situacao' | 'painel_admin' | 'app_campo' | 'simulacao_zap' | 'modulo_social';
-  onNavigate: (section: 'sala_situacao' | 'painel_admin' | 'app_campo' | 'simulacao_zap' | 'modulo_social') => void;
+  onNavigate: (
+    section: 'sala_situacao' | 'painel_admin' | 'app_campo' | 'simulacao_zap' | 'modulo_social',
+    adminTab?: PainelAdminTab,
+  ) => void;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -22,11 +25,15 @@ export default function PitchModeBar({ currentSection, onNavigate, isOpen, onClo
 
   const currentStep = PITCH_TOUR_STEPS[currentStepIndex];
 
+  const navigateToStep = (step: PitchTourStep) => {
+    onNavigate(step.moduloAlvo, step.moduloAlvo === 'painel_admin' ? 'KANBAN' : undefined);
+  };
+
   const handleNext = () => {
     if (currentStepIndex < PITCH_TOUR_STEPS.length - 1) {
       const nextIdx = currentStepIndex + 1;
       setCurrentStepIndex(nextIdx);
-      onNavigate(PITCH_TOUR_STEPS[nextIdx].moduloAlvo);
+      navigateToStep(PITCH_TOUR_STEPS[nextIdx]);
     }
   };
 
@@ -34,13 +41,13 @@ export default function PitchModeBar({ currentSection, onNavigate, isOpen, onClo
     if (currentStepIndex > 0) {
       const prevIdx = currentStepIndex - 1;
       setCurrentStepIndex(prevIdx);
-      onNavigate(PITCH_TOUR_STEPS[prevIdx].moduloAlvo);
+      navigateToStep(PITCH_TOUR_STEPS[prevIdx]);
     }
   };
 
   const handleGoToStep = (index: number) => {
     setCurrentStepIndex(index);
-    onNavigate(PITCH_TOUR_STEPS[index].moduloAlvo);
+    navigateToStep(PITCH_TOUR_STEPS[index]);
   };
 
   return (
@@ -110,7 +117,7 @@ export default function PitchModeBar({ currentSection, onNavigate, isOpen, onClo
               {/* Botões de Ação e Navegação */}
               <div className="md:col-span-4 flex flex-col gap-2 justify-center">
                 <button
-                  onClick={() => onNavigate(currentStep.moduloAlvo)}
+                  onClick={() => navigateToStep(currentStep)}
                   className="w-full py-2 px-3 bg-sky-600 hover:bg-sky-500 text-white font-medium text-xs rounded-lg shadow-xs transition-colors flex items-center justify-center gap-1.5"
                 >
                   <Play className="w-3.5 h-3.5 fill-white" />

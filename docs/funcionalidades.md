@@ -42,6 +42,8 @@ O acesso é selecionado na tela inicial. Não há validação real de identidade
 - O assistente social entra diretamente no Módulo Social.
 - A administração central pode navegar por todas as áreas.
 - Ações administrativas especiais do Kanban, como tratamento de duplicidade ou demanda fora da alçada, são reservadas ao perfil central.
+- Toda navegação entre módulos passa por uma guarda central de perfil; atalhos, toasts e o roteiro guiado não contornam o RBAC.
+- Quando um atalho aponta para uma área sem permissão, a ação permanece no módulo atual e informa a restrição quando aplicável.
 - O botão **Trocar Perfil** encerra a sessão simulada e retorna à seleção de acesso.
 
 ---
@@ -169,7 +171,7 @@ Funcionalidades disponíveis:
 - filtros por categoria, prioridade, distrito e bairro;
 - chips rápidos de Vila Mariana, Moema e Saúde;
 - cartões com protocolo, categoria, prioridade, endereço, bairro e SLA;
-- abertura do cartão em modal detalhado, com localização, status, prioridade, origem, SLA, coordenadas e evidência disponível;
+- abertura do cartão em modal detalhado, com localização, status, prioridade, origem, SLA, coordenadas e fotos ANTES/DEPOIS; evidências ausentes nos dados legados usam imagens demonstrativas identificadas;
 - aprovação ou rejeição diretamente no modal quando a tarefa aguarda validação;
 - movimentação de chamados entre etapas do fluxo;
 - aprovação ou rejeição de vistorias;
@@ -282,6 +284,7 @@ A aplicação contém dois fluxos conversacionais demonstrativos.
 - Inclusão imediata no conjunto de chamados da sessão.
 - Mensagens de acompanhamento e confirmação.
 - Notificação quando a ordem é concluída em campo.
+- Ações rápidas e toasts relacionados ao Kanban abrem diretamente a aba Triagem/Kanban para perfis autorizados.
 
 ### 7.2 Jornada do trabalhador
 
@@ -314,7 +317,8 @@ A aplicação contém dois fluxos conversacionais demonstrativos.
 
 - Toasts institucionais não bloqueantes.
 - Avisos de criação, andamento, aprovação, rejeição e conclusão.
-- Ações de notificação capazes de direcionar ao módulo relacionado.
+- Ações de notificação capazes de direcionar ao módulo e, quando aplicável, diretamente à aba Triagem/Kanban relacionada.
+- Links de notificação são exibidos apenas para destinos permitidos pelo perfil e só são descartados após navegação aceita.
 - Toast inicial de conexão com desaparecimento automático.
 
 ### 8.3 Briefing executivo

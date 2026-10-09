@@ -2,12 +2,15 @@ import React, { useEffect, useRef } from 'react';
 import { 
   CheckCircle2, AlertCircle, Info, AlertTriangle, X, ArrowRight
 } from 'lucide-react';
-import { SystemNotification } from '../types';
+import { PainelAdminTab, SystemNotification } from '../types';
 
 interface ToastContainerProps {
   notifications: SystemNotification[];
   onDismiss: (id: string) => void;
-  onNavigate?: (section: 'sala_situacao' | 'painel_admin' | 'app_campo' | 'simulacao_zap' | 'modulo_social') => void;
+  onNavigate?: (
+    section: 'sala_situacao' | 'painel_admin' | 'app_campo' | 'simulacao_zap' | 'modulo_social',
+    adminTab?: PainelAdminTab,
+  ) => boolean;
 }
 
 export default function ToastContainer({ notifications, onDismiss, onNavigate }: ToastContainerProps) {
@@ -78,8 +81,8 @@ export default function ToastContainer({ notifications, onDismiss, onNavigate }:
               {n.linkSection && onNavigate && (
                 <button
                   onClick={() => {
-                    onNavigate(n.linkSection!);
-                    onDismiss(n.id);
+                    const navigated = onNavigate(n.linkSection!, n.linkAdminTab);
+                    if (navigated) onDismiss(n.id);
                   }}
                   className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-amber-300 hover:text-amber-200 uppercase tracking-wider underline hover:no-underline transition-colors"
                 >

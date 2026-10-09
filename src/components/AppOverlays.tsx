@@ -3,10 +3,11 @@ import { useApp } from '../context/AppContext';
 import ToastContainer from './ToastContainer';
 import PitchModeBar from './PitchModeBar';
 import { Section } from './Sidebar';
+import { PainelAdminTab } from '../types';
 
 interface AppOverlaysProps {
   currentSection: Section;
-  onNavigateToSection: (sec: Section) => void;
+  onNavigateToSection: (sec: Section, adminTab?: PainelAdminTab) => boolean;
 }
 
 export default function AppOverlays({ currentSection, onNavigateToSection }: AppOverlaysProps) {

@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { Chamado, StatusChamado, CategoriaChamado, PrioridadeChamado } from '../types';
+import { Chamado, StatusChamado, CategoriaChamado, PrioridadeChamado, PainelAdminTab } from '../types';
 import { subprefeituras } from '../data';
 import { UserSession } from '../LoginTypes';
 import { 
@@ -17,12 +17,11 @@ import { BAIRROS_SUB_VILA_MARIANA } from '../data';
 import BrasaoSaoPaulo from './BrasaoSaoPaulo';
 import { useApp } from '../context/AppContext';
 
-type PainelAdminTab = 'COCKPIT' | 'KANBAN' | 'WHATSAPP';
-
 interface PainelAdminProps {
   chamados: Chamado[];
   setChamados: React.Dispatch<React.SetStateAction<Chamado[]>>;
-  initialTab?: PainelAdminTab;
+  activeTab: PainelAdminTab;
+  onActiveTabChange: (tab: PainelAdminTab) => void;
 }
 
 const DISTANCE_THRESHOLD = 0.0009; // approx 100 meters in degrees
@@ -132,6 +131,9 @@ const SLA_HORAS_POR_CATEGORIA: Record<CategoriaChamado, number> = {
   CALCADA: 120,
 };
 
+const FOTO_EVIDENCIA_ANTES = 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&q=80&w=800&h=600';
+const FOTO_EVIDENCIA_DEPOIS = 'https://images.unsplash.com/photo-1449844908441-8829872d2607?auto=format&fit=crop&q=80&w=800&h=600';
+
 // Formatação do tempo em aberto (ex.: "há 2 dias", "há 5 horas")
 function formatTempoAberto(dataAbertura: string): string {
   const agora = Date.now();
@@ -189,29 +191,30 @@ function getSlaProgress(chamado: Chamado) {
   };
 }
 
-export default function PainelAdmin({ chamados, setChamados, session, initialTab = 'COCKPIT' }: PainelAdminProps & { session: UserSession }) {
+export default function PainelAdmin({ chamados, setChamados, session, activeTab, onActiveTabChange }: PainelAdminProps & { session: UserSession }) {
   const { addNotification } = useApp();
   const [whatsappPreview, setWhatsappPreview] = useState<Chamado | null>(null);
-  const [activeTab, setActiveTab] = useState<PainelAdminTab>(initialTab);
   const [showPdfReport, setShowPdfReport] = useState(false);
-  const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null);
+  const [previewPhoto, setPreviewPhoto] = useState<{ url: string; etapa: 'ANTES' | 'DEPOIS' } | null>(null);
   const [selectedKanbanChamadoId, setSelectedKanbanChamadoId] = useState<string | null>(null);
   const selectedKanbanChamado = chamados.find((chamado) => chamado.id === selectedKanbanChamadoId) ?? null;
 
-  useEffect(() => {
-    setActiveTab(initialTab);
-  }, [initialTab]);
 
   useEffect(() => {
-    if (!selectedKanbanChamadoId) return;
+    if (!selectedKanbanChamadoId && !previewPhoto) return;
 
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setSelectedKanbanChamadoId(null);
+      if (event.key !== 'Escape') return;
+      if (previewPhoto) {
+        setPreviewPhoto(null);
+      } else {
+        setSelectedKanbanChamadoId(null);
+      }
     };
 
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [selectedKanbanChamadoId]);
+  }, [selectedKanbanChamadoId, previewPhoto]);
 
   // Estados de Filtros e Busca no Kanban por Bairro / Distrito
   const [searchProtocolo, setSearchProtocolo] = useState('');
@@ -376,7 +379,7 @@ export default function PainelAdmin({ chamados, setChamados, session, initialTab
         titulo: 'Chamado Aprovado e Concluído',
         mensagem: `Protocolo ${chamadoAprovado.protocolo} foi homologado pela supervisão. Munícipe notificado via WhatsApp SP156 com foto do DEPOIS.`,
         tipo: 'sucesso',
-        linkSection: 'simulacao_zap',
+        linkSection: session.role === 'CENTRAL' ? 'simulacao_zap' : undefined,
         protocolo: chamadoAprovado.protocolo
       });
       setTimeout(() => setToastNotification(null), 4000);
@@ -395,7 +398,7 @@ export default function PainelAdmin({ chamados, setChamados, session, initialTab
         titulo: 'Vistoria Devolvida para Reparo',
         mensagem: `OS ${chamadoRejeitado.protocolo} retornou para a equipe de campo devido a inconformidade fotográfica ou checklist pendente.`,
         tipo: 'alerta',
-        linkSection: 'app_campo',
+        linkSection: session.role === 'CENTRAL' ? 'app_campo' : undefined,
         protocolo: chamadoRejeitado.protocolo
       });
       setTimeout(() => setToastNotification(null), 4000);
@@ -430,7 +433,7 @@ export default function PainelAdmin({ chamados, setChamados, session, initialTab
       <div className="bg-white border-b border-slate-200 px-3 sm:px-6 py-2.5 flex items-center justify-between shrink-0 overflow-x-auto scrollbar-none gap-3">
         <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-lg shrink-0">
           <button
-            onClick={() => setActiveTab('COCKPIT')}
+            onClick={() => onActiveTabChange('COCKPIT')}
             className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all flex items-center gap-2 whitespace-nowrap min-h-[34px] ${
               activeTab === 'COCKPIT' 
                 ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80 font-semibold' 
@@ -445,7 +448,7 @@ export default function PainelAdmin({ chamados, setChamados, session, initialTab
           </button>
 
           <button
-            onClick={() => setActiveTab('KANBAN')}
+            onClick={() => onActiveTabChange('KANBAN')}
             className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all flex items-center gap-2 whitespace-nowrap min-h-[34px] ${
               activeTab === 'KANBAN' 
                 ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80 font-semibold' 
@@ -462,7 +465,7 @@ export default function PainelAdmin({ chamados, setChamados, session, initialTab
           </button>
 
           <button
-            onClick={() => setActiveTab('WHATSAPP')}
+            onClick={() => onActiveTabChange('WHATSAPP')}
             className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all flex items-center gap-2 whitespace-nowrap min-h-[34px] ${
               activeTab === 'WHATSAPP' 
                 ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80 font-semibold' 
@@ -498,7 +501,7 @@ export default function PainelAdmin({ chamados, setChamados, session, initialTab
             chamados={chamados}
             onFiltrarNoKanban={(distrito) => {
               setFilterDistrito(distrito);
-              setActiveTab('KANBAN');
+              onActiveTabChange('KANBAN');
             }}
             onExportarRelatorio={() => setShowPdfReport(true)}
           />
@@ -903,27 +906,17 @@ export default function PainelAdmin({ chamados, setChamados, session, initialTab
                     const sla = getSlaProgress(chamado);
 
                     // Miniatura da foto Depois:
-                    const temFotoDepois = Boolean(chamado.fotoDepois || col.id === 'AGUARDANDO_APROVACAO' || col.id === 'CONCLUIDO');
-                    const fotoDepoisUrl = chamado.fotoDepois || 'https://images.unsplash.com/photo-1449844908441-8829872d2607?auto=format&fit=crop&q=80&w=400&h=300';
+                    const deveExibirEvidencias = col.id === 'AGUARDANDO_APROVACAO' || col.id === 'CONCLUIDO';
+                    const fotoDepoisUrl = chamado.fotoDepois || (deveExibirEvidencias ? FOTO_EVIDENCIA_DEPOIS : undefined);
 
                     return (
                       <div
                         key={chamado.id}
-                        role="button"
-                        tabIndex={0}
-                        aria-label={`Abrir detalhes do chamado ${chamado.protocolo}`}
                         onClick={(event) => {
                           if ((event.target as HTMLElement).closest('button, [data-prevent-card-modal]')) return;
                           setSelectedKanbanChamadoId(chamado.id);
                         }}
-                        onKeyDown={(event) => {
-                          if (event.target !== event.currentTarget) return;
-                          if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault();
-                            setSelectedKanbanChamadoId(chamado.id);
-                          }
-                        }}
-                        className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-xl p-3.5 shadow-xs hover:shadow-md transition-all flex flex-col gap-2.5 relative group/card cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-xl p-3.5 shadow-xs hover:shadow-md transition-all flex flex-col gap-2.5 relative group/card cursor-pointer"
                       >
                         {/* Linha Superior: Ícone da Categoria + Título + Protocolo e Selo de Prioridade */}
                         <div className="flex items-start justify-between gap-2">
@@ -950,6 +943,15 @@ export default function PainelAdmin({ chamados, setChamados, session, initialTab
                                 Atrasado
                               </span>
                             )}
+                            <button
+                              type="button"
+                              onClick={() => setSelectedKanbanChamadoId(chamado.id)}
+                              className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              aria-label={`Abrir detalhes do chamado ${chamado.protocolo}`}
+                              title="Abrir detalhes"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                            </button>
                           </div>
                         </div>
 
@@ -973,12 +975,21 @@ export default function PainelAdmin({ chamados, setChamados, session, initialTab
                         </div>
 
                         {/* Miniatura da Foto "Depois" anexada (quando houver) */}
-                        {temFotoDepois && (
+                        {fotoDepoisUrl && (
                           <div className="flex flex-col gap-2 pt-0.5">
                             <div
                               data-prevent-card-modal
-                              onClick={() => setPreviewPhotoUrl(fotoDepoisUrl)}
-                              className="w-full h-24 rounded-lg overflow-hidden relative border border-slate-200 cursor-pointer group/thumb shadow-inner bg-slate-100"
+                              role="button"
+                              tabIndex={0}
+                              aria-label={`Ampliar foto depois do chamado ${chamado.protocolo}`}
+                              onClick={() => setPreviewPhoto({ url: fotoDepoisUrl, etapa: 'DEPOIS' })}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                  event.preventDefault();
+                                  setPreviewPhoto({ url: fotoDepoisUrl, etapa: 'DEPOIS' });
+                                }
+                              }}
+                              className="w-full h-24 rounded-lg overflow-hidden relative border border-slate-200 cursor-pointer group/thumb shadow-inner bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                               title="Clique para ampliar a foto comprobatória"
                             >
                               <img 
@@ -993,7 +1004,7 @@ export default function PainelAdmin({ chamados, setChamados, session, initialTab
                                 </div>
                               </div>
                               <span className="absolute bottom-1.5 left-1.5 bg-slate-900/80 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1">
-                                <Camera className="w-3 h-3 text-emerald-400" /> Foto Depois
+                                <Camera className="w-3 h-3 text-emerald-400" /> Foto Depois {!chamado.fotoDepois && '• Demo'}
                               </span>
                             </div>
 
@@ -1104,6 +1115,9 @@ export default function PainelAdmin({ chamados, setChamados, session, initialTab
         const status = columns.find((column) => column.id === selectedKanbanChamado.status);
         const sla = getSlaProgress(selectedKanbanChamado);
         const subNome = subprefeituras.find((sub) => sub.id === selectedKanbanChamado.subprefeituraId)?.nome || 'Vila Mariana';
+        const deveExibirEvidencias = selectedKanbanChamado.status === 'AGUARDANDO_APROVACAO' || selectedKanbanChamado.status === 'CONCLUIDO';
+        const fotoAntesUrl = selectedKanbanChamado.fotoAntes || (deveExibirEvidencias ? FOTO_EVIDENCIA_ANTES : undefined);
+        const fotoDepoisUrl = selectedKanbanChamado.fotoDepois || (deveExibirEvidencias ? FOTO_EVIDENCIA_DEPOIS : undefined);
 
         return (
           <div
@@ -1132,6 +1146,7 @@ export default function PainelAdmin({ chamados, setChamados, session, initialTab
                 </div>
                 <button
                   type="button"
+                  autoFocus
                   onClick={() => setSelectedKanbanChamadoId(null)}
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
                   aria-label="Fechar detalhes do chamado"
@@ -1206,21 +1221,46 @@ export default function PainelAdmin({ chamados, setChamados, session, initialTab
                     </div>
                   </section>
 
-                  {selectedKanbanChamado.fotoDepois && (
+                  {(fotoAntesUrl || fotoDepoisUrl) && (
                     <section className="rounded-lg border border-slate-200 p-4 sm:col-span-2">
-                      <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">Evidência de campo</h3>
-                      <button
-                        type="button"
-                        onClick={() => setPreviewPhotoUrl(selectedKanbanChamado.fotoDepois || null)}
-                        className="block w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-100 text-left"
-                      >
-                        <img
-                          src={selectedKanbanChamado.fotoDepois}
-                          alt={`Foto de conclusão do chamado ${selectedKanbanChamado.protocolo}`}
-                          className="max-h-64 w-full object-cover"
-                          referrerPolicy="no-referrer"
-                        />
-                      </button>
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Evidências de campo</h3>
+                        {(!selectedKanbanChamado.fotoAntes || !selectedKanbanChamado.fotoDepois) && deveExibirEvidencias && (
+                          <span className="text-[10px] font-medium text-slate-400">Imagens demonstrativas</span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {fotoAntesUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setPreviewPhoto({ url: fotoAntesUrl, etapa: 'ANTES' })}
+                            className="overflow-hidden rounded-lg border border-slate-200 bg-slate-100 text-left transition-colors hover:border-slate-400"
+                          >
+                            <img
+                              src={fotoAntesUrl}
+                              alt={`Foto antes da execução do chamado ${selectedKanbanChamado.protocolo}`}
+                              className="h-44 w-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
+                            <span className="block border-t border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700">ANTES</span>
+                          </button>
+                        )}
+                        {fotoDepoisUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setPreviewPhoto({ url: fotoDepoisUrl, etapa: 'DEPOIS' })}
+                            className="overflow-hidden rounded-lg border border-slate-200 bg-slate-100 text-left transition-colors hover:border-slate-400"
+                          >
+                            <img
+                              src={fotoDepoisUrl}
+                              alt={`Foto depois da execução do chamado ${selectedKanbanChamado.protocolo}`}
+                              className="h-44 w-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
+                            <span className="block border-t border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700">DEPOIS</span>
+                          </button>
+                        )}
+                      </div>
                     </section>
                   )}
                 </div>
@@ -1477,40 +1517,45 @@ export default function PainelAdmin({ chamados, setChamados, session, initialTab
         </div>
       )}
 
-      {/* Lightbox / Modal de Pré-visualização da Foto Depois */}
-      {previewPhotoUrl && (
-        <div 
-          className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-4"
-          onClick={() => setPreviewPhotoUrl(null)}
+      {/* Lightbox das evidências fotográficas ANTES/DEPOIS */}
+      {previewPhoto && (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-xs"
+          onClick={() => setPreviewPhoto(null)}
         >
-          <div 
-            className="bg-white rounded-2xl overflow-hidden shadow-2xl max-w-lg w-full p-4 relative"
-            onClick={e => e.stopPropagation()}
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Foto ${previewPhoto.etapa.toLowerCase()} da execução`}
+            className="relative w-full max-w-lg overflow-hidden rounded-2xl bg-white p-4 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                <Camera className="w-4 h-4 text-emerald-600" />
-                Comprovação Fotográfica ("Depois")
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800">
+                <Camera className="h-4 w-4 text-emerald-600" />
+                Comprovação fotográfica — {previewPhoto.etapa}
               </h4>
-              <button 
-                onClick={() => setPreviewPhotoUrl(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+              <button
+                type="button"
+                onClick={() => setPreviewPhoto(null)}
+                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                aria-label="Fechar foto ampliada"
               >
-                <X className="w-4 h-4" />
+                <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="rounded-xl overflow-hidden bg-slate-100 mt-3 max-h-[65vh] flex items-center justify-center border border-slate-200">
-              <img 
-                src={previewPhotoUrl} 
-                alt="Foto de Comprovação" 
-                className="w-full h-auto object-contain max-h-[65vh]" 
+            <div className="mt-3 flex max-h-[65vh] items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+              <img
+                src={previewPhoto.url}
+                alt={`Foto ${previewPhoto.etapa.toLowerCase()} da execução`}
+                className="h-auto max-h-[65vh] w-full object-contain"
                 referrerPolicy="no-referrer"
               />
             </div>
-            <div className="p-3 bg-slate-50 rounded-xl mt-3 flex items-center justify-between text-xs text-slate-600 border border-slate-100">
-              <span>Evidência anexada no encerramento</span>
-              <span className="font-semibold text-emerald-700 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Aprovado pela equipe técnica
+            <div className="mt-3 flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
+              <span>Evidência da etapa {previewPhoto.etapa}</span>
+              <span className="flex items-center gap-1 font-semibold text-emerald-700">
+                <CheckCircle2 className="h-3.5 w-3.5" /> Registrada no chamado
               </span>
             </div>
           </div>
