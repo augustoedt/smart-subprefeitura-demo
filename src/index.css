@@ -81,6 +81,32 @@
   background: #94a3b8;
 }
 
+/* Cluster operacional: total de chamados em um círculo dourado único. */
+.govtech-marker-cluster {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 3px solid #ffffff;
+  border-radius: 9999px;
+  background: #d4af37;
+  color: #07162c;
+  box-shadow: 0 0 0 2px rgb(113 78 5 / 65%), 0 4px 10px rgb(15 23 42 / 32%);
+}
+
+.govtech-marker-cluster span {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.govtech-marker-cluster--contrast {
+  border-width: 4px;
+  box-shadow: 0 0 0 3px #020617, 0 5px 14px rgb(2 6 23 / 55%);
+}
+
 @media print {
   body * {
     visibility: hidden;

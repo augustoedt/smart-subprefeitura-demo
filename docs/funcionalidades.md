@@ -80,7 +80,7 @@ No desktop, a barra superior e cada popover horizontal se ajustam à largura de 
 
 - Filtro por distrito: Vila Mariana, Moema e Saúde.
 - Filtro temático: todos, zeladoria, infraestrutura e social.
-- Exibição de ocorrências em modo normal ou agrupado, conforme a capacidade do motor.
+- Exibição de ocorrências em modo normal ou agrupado, conforme a capacidade do motor; agrupamentos usam um círculo dourado com a quantidade de chamados e se desfazem progressivamente ao ampliar o zoom.
 - Ativação de pontos cegos quando suportada pelo motor selecionado.
 - Lista sincronizada com até 50 ocorrências.
 - Painel estatístico com indicadores e gráficos.
@@ -173,8 +173,9 @@ Funcionalidades disponíveis:
 - filtros por categoria, prioridade, distrito e bairro;
 - chips rápidos de Vila Mariana, Moema e Saúde;
 - cartões com protocolo, categoria, prioridade, endereço, bairro e SLA;
-- abertura do cartão em modal detalhado, com localização, status, prioridade, origem, SLA, coordenadas e fotos ANTES/DEPOIS; evidências ausentes nos dados legados usam imagens demonstrativas identificadas;
+- abertura do cartão em modal detalhado, limitado à altura visível da tela, com cabeçalho e ações fixos, conteúdo rolável, localização, status, prioridade, origem, SLA, coordenadas e fotos ANTES/DEPOIS; evidências ausentes nos dados legados usam imagens demonstrativas identificadas;
 - aprovação ou rejeição diretamente no modal quando a tarefa aguarda validação;
+- após a aprovação, a pré-visualização do comunicado WhatsApp permanece limitada à viewport, com cabeçalho e fechamento sempre acessíveis e rolagem interna da conversa;
 - movimentação de chamados entre etapas do fluxo;
 - aprovação ou rejeição de vistorias;
 - identificação demonstrativa de duplicidades por proximidade;

@@ -717,7 +717,18 @@ export default function MapComponent({
 
         {/* Modo Cluster com Markers dos chamados */}
         {(viewMode === 'CLUSTER' && !isChoroplethMode && !isBuffersMode && !isHeatmapEngine) && (
-          <MarkerClusterGroup chunkedLoading>
+          <MarkerClusterGroup
+            chunkedLoading
+            iconCreateFunction={(cluster) => {
+              const size = highContrastMode ? 46 : 40;
+              return L.divIcon({
+                className: `govtech-marker-cluster${highContrastMode ? ' govtech-marker-cluster--contrast' : ''}`,
+                html: `<span>${cluster.getChildCount()}</span>`,
+                iconSize: [size, size],
+                iconAnchor: [size / 2, size / 2]
+              });
+            }}
+          >
             {markers}
           </MarkerClusterGroup>
         )}

@@ -201,12 +201,14 @@ export default function PainelAdmin({ chamados, setChamados, session, activeTab,
 
 
   useEffect(() => {
-    if (!selectedKanbanChamadoId && !previewPhoto) return;
+    if (!selectedKanbanChamadoId && !previewPhoto && !whatsappPreview) return;
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       if (previewPhoto) {
         setPreviewPhoto(null);
+      } else if (whatsappPreview) {
+        setWhatsappPreview(null);
       } else {
         setSelectedKanbanChamadoId(null);
       }
@@ -214,7 +216,7 @@ export default function PainelAdmin({ chamados, setChamados, session, activeTab,
 
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [selectedKanbanChamadoId, previewPhoto]);
+  }, [selectedKanbanChamadoId, previewPhoto, whatsappPreview]);
 
   // Estados de Filtros e Busca no Kanban por Bairro / Distrito
   const [searchProtocolo, setSearchProtocolo] = useState('');
@@ -1121,7 +1123,7 @@ export default function PainelAdmin({ chamados, setChamados, session, activeTab,
 
         return (
           <div
-            className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:p-6"
+            className="fixed inset-0 z-[110] flex items-start justify-center overflow-y-auto bg-slate-950/70 p-2 backdrop-blur-sm sm:items-center sm:p-6"
             onMouseDown={(event) => {
               if (event.target === event.currentTarget) setSelectedKanbanChamadoId(null);
             }}
@@ -1130,9 +1132,9 @@ export default function PainelAdmin({ chamados, setChamados, session, activeTab,
               role="dialog"
               aria-modal="true"
               aria-labelledby="kanban-task-modal-title"
-              className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl"
+              className="my-auto flex max-h-[calc(100dvh-1rem)] min-h-0 w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100dvh-3rem)]"
             >
-              <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-6">
+              <div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-6">
                 <div className="flex min-w-0 items-start gap-3">
                   <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${category.borderColor} ${category.bgLight} ${category.textColor}`}>
                     <CategoryIcon size={20} />
@@ -1155,7 +1157,7 @@ export default function PainelAdmin({ chamados, setChamados, session, activeTab,
                 </button>
               </div>
 
-              <div className="overflow-y-auto p-4 sm:p-6">
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
                 <div className="mb-5 flex flex-wrap items-center gap-2">
                   <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${status?.color || 'border-slate-200 bg-slate-100 text-slate-700'}`}>
                     {status?.title || selectedKanbanChamado.status.replace(/_/g, ' ')}
@@ -1266,7 +1268,7 @@ export default function PainelAdmin({ chamados, setChamados, session, activeTab,
                 </div>
               </div>
 
-              <div className="flex flex-col-reverse gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:justify-end sm:px-6">
+              <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:justify-end sm:px-6">
                 <button
                   type="button"
                   onClick={() => setSelectedKanbanChamadoId(null)}
@@ -1448,32 +1450,47 @@ export default function PainelAdmin({ chamados, setChamados, session, activeTab,
 
       {/* WhatsApp Preview Overlay */}
       {whatsappPreview && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-sm bg-[#efeae2] rounded-[24px] overflow-hidden shadow-2xl relative border-8 border-slate-800 animate-in zoom-in-95 duration-200">
+        <div
+          className="fixed inset-0 z-[130] flex items-start justify-center overflow-y-auto bg-slate-900/50 p-2 backdrop-blur-sm sm:items-center sm:p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setWhatsappPreview(null);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="whatsapp-preview-title"
+            className="relative my-auto flex max-h-[calc(100dvh-1rem)] min-h-0 w-full max-w-sm flex-col overflow-hidden rounded-[24px] border-8 border-slate-800 bg-[#efeae2] shadow-2xl animate-in zoom-in-95 duration-200 sm:max-h-[calc(100dvh-2rem)]"
+          >
             {/* iOS Status Bar Mock */}
             <div className="bg-[#00a884] h-6 w-full absolute top-0 left-0 z-10 flex justify-center">
               <div className="w-32 h-4 bg-slate-800 rounded-b-xl"></div>
             </div>
 
             {/* WhatsApp Header */}
-            <div className="bg-[#00a884] text-white px-4 pb-3 pt-8 flex items-center gap-3 relative z-0">
+            <div className="relative z-0 flex shrink-0 items-center gap-3 bg-[#00a884] px-4 pb-3 pt-8 text-white">
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shrink-0">
                 <MessageCircle className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1">
-                <h4 className="font-bold text-[15px] leading-tight flex items-center gap-1">
+                <h4 id="whatsapp-preview-title" className="flex items-center gap-1 text-[15px] font-bold leading-tight">
                   Prefeitura SP - 156
                   <CheckCircle2 className="w-3.5 h-3.5 text-blue-200 fill-blue-500" />
                 </h4>
                 <p className="text-[11px] text-white/80">Conta comercial oficial</p>
               </div>
-              <button onClick={() => setWhatsappPreview(null)} className="p-1 hover:bg-white/20 rounded-full transition-colors">
-                <X className="w-5 h-5" />
+              <button
+                type="button"
+                onClick={() => setWhatsappPreview(null)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-white/20"
+                aria-label="Fechar pré-visualização do WhatsApp"
+              >
+                <X className="h-5 w-5" />
               </button>
             </div>
 
             {/* WhatsApp Body */}
-            <div className="p-4 space-y-3 min-h-[400px] flex flex-col bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] bg-contain">
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] bg-contain p-3 sm:p-4">
               {/* Message Bubble */}
               <div className="bg-white rounded-2xl rounded-tl-none p-2 shadow-sm max-w-[92%] relative">
                 <div className="w-full h-36 bg-slate-200 rounded-xl mb-2 overflow-hidden relative border border-slate-100">

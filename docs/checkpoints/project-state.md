@@ -58,6 +58,11 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
 
 ### Entregas concluídas
 
+- **Clusters cartográficos e modais de aprovação responsivos**:
+  - Agrupamentos de chamados no Leaflet usam um círculo dourado uniforme com a quantidade centralizada e continuam se desagregando conforme o zoom.
+  - O modal detalhado dos cartões do Kanban respeita `100dvh`, mantém cabeçalho e rodapé acessíveis e aplica rolagem somente ao conteúdo.
+  - A pré-visualização do chat WhatsApp disparada após a aprovação usa posicionamento fixo, altura limitada à viewport, conversa rolável e fechamento sempre acessível por botão, fundo ou `Escape`.
+
 - **Controles territoriais da SUB-VM e de seus distritos**:
   - O menu cartográfico principal recebeu dois botões somente com ícone, à direita de **Ações**, com estados ativos e atributos acessíveis para alternar separadamente o limite da SUB-VM e os distritos Vila Mariana, Moema e Saúde.
   - A malha municipal `appdata/distritos.geojson` foi filtrada em três arquivos dentro de `appdata/distritos/`; as geometrias EPSG:31983 foram convertidas para WGS84 e publicadas em `public/data/distritos/` para carregamento sob demanda.
