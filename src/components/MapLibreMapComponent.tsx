@@ -4,10 +4,11 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { Chamado, Subprefeitura, FonteDadosPublica, HotspotCruzamento, CamadaMapeada, BibliotecaPublicaGeolocalizada } from '../types';
 import { useApp } from '../context/AppContext';
 import { 
-  Globe, Compass, Layers, Eye, ShieldAlert, BookOpen, 
-  RotateCcw, Sparkles, Building2, MapPin, ZoomIn, ZoomOut,
+  Layers, Eye, ShieldAlert, BookOpen, Sparkles, Building2, MapPin, ZoomIn, ZoomOut,
   Navigation, Maximize2
 } from 'lucide-react';
+
+export type MapLibreStyleMode = 'STANDARD' | 'DARK' | 'CADASTRO';
 
 interface MapLibreMapComponentProps {
   chamados: Chamado[];
@@ -19,6 +20,9 @@ interface MapLibreMapComponentProps {
   highContrast: boolean;
   crossAnalysisActive: boolean;
   hotspotsCruzamento?: HotspotCruzamento[];
+  is3DMode: boolean;
+  styleMode: MapLibreStyleMode;
+  resetOrientationVersion: number;
 }
 
 export default function MapLibreMapComponent({
@@ -30,7 +34,10 @@ export default function MapLibreMapComponent({
   onSelectBiblioteca,
   highContrast,
   crossAnalysisActive,
-  hotspotsCruzamento = []
+  hotspotsCruzamento = [],
+  is3DMode,
+  styleMode,
+  resetOrientationVersion
 }: MapLibreMapComponentProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -40,8 +47,6 @@ export default function MapLibreMapComponent({
 
   const [pitch, setPitch] = useState<number>(45);
   const [bearing, setBearing] = useState<number>(-15);
-  const [is3DMode, setIs3DMode] = useState<boolean>(true);
-  const [styleMode, setStyleMode] = useState<'STANDARD' | 'DARK' | 'CADASTRO'>('STANDARD');
   const [activePopupInfo, setActivePopupInfo] = useState<{
     tipo: 'CHAMADO' | 'BIBLIOTECA' | 'HOTSPOT';
     item: any;
@@ -118,6 +123,11 @@ export default function MapLibreMapComponent({
 
       map.addControl(new maplibregl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
 
+      requestAnimationFrame(() => {
+        const controls = mapContainerRef.current?.querySelector<HTMLElement>('.maplibregl-ctrl-top-right');
+        if (controls) controls.style.top = '2.75rem';
+      });
+
       map.on('rotateend', () => {
         setBearing(Math.round(map.getBearing()));
       });
@@ -143,6 +153,26 @@ export default function MapLibreMapComponent({
       console.warn('MapLibre GL initialization error, falling back gracefully:', err);
     }
   }, [mapStyle]);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    mapRef.current.easeTo({
+      pitch: is3DMode ? 50 : 0,
+      bearing: is3DMode ? -20 : 0,
+      duration: 800
+    });
+  }, [is3DMode]);
+
+  useEffect(() => {
+    if (!mapRef.current || resetOrientationVersion === 0) return;
+
+    mapRef.current.easeTo({
+      pitch: 0,
+      bearing: 0,
+      duration: 500
+    });
+  }, [resetOrientationVersion]);
 
   // Atualizar centro e rotação APENAS quando a subprefeitura mudar deliberadamente
   useEffect(() => {
@@ -276,89 +306,8 @@ export default function MapLibreMapComponent({
 
   }, [chamados, bibliotecasPublicas, isCamadaAtiva, crossAnalysisActive, hotspotsCruzamento]);
 
-  const togglePerspective = () => {
-    if (!mapRef.current) return;
-    const nextMode = !is3DMode;
-    setIs3DMode(nextMode);
-    mapRef.current.easeTo({
-      pitch: nextMode ? 50 : 0,
-      bearing: nextMode ? -20 : 0,
-      duration: 800
-    });
-  };
-
-  const resetOrientation = () => {
-    if (!mapRef.current) return;
-    mapRef.current.easeTo({
-      pitch: 0,
-      bearing: 0,
-      duration: 500
-    });
-    setIs3DMode(false);
-  };
-
   return (
     <div className="relative w-full h-full overflow-hidden flex flex-col bg-slate-900">
-      {/* Barra Superior Esquerda: Modos Cartográficos MapLibre GL */}
-      <div className="absolute top-3 left-3 z-30 flex flex-wrap items-center gap-2 bg-slate-900/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-700/80 shadow-lg text-xs text-white">
-        <div className="flex items-center gap-1.5 px-2 py-1 bg-sky-950 text-sky-300 font-bold rounded-lg border border-sky-800">
-          <Globe className="w-3.5 h-3.5 text-sky-400 animate-spin-slow" />
-          <span>MapLibre GL 3D</span>
-        </div>
-
-        {/* Toggle 3D Pitch / 2D Planar */}
-        <button
-          onClick={togglePerspective}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-semibold transition-all border ${
-            is3DMode 
-              ? 'bg-blue-600 text-white border-blue-400 shadow-sm' 
-              : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
-          }`}
-          title="Alternar entre projeção plana 2D e perspectiva isométrica 3D com pitch"
-        >
-          <Compass className={`w-3.5 h-3.5 ${is3DMode ? 'rotate-45 text-amber-300' : ''}`} />
-          <span>{is3DMode ? `Perspectiva 3D (${pitch}°)` : 'Planta 2D'}</span>
-        </button>
-
-        {/* Seletor de estilos raster gratuitos baseados no OpenStreetMap. */}
-        <div className="flex items-center bg-slate-800 rounded-lg p-0.5 border border-slate-700">
-          <button
-            onClick={() => setStyleMode('STANDARD')}
-            className={`px-2 py-1 rounded text-[11px] font-bold ${
-              styleMode === 'STANDARD' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            OSM HOT
-          </button>
-          <button
-            onClick={() => setStyleMode('CADASTRO')}
-            className={`px-2 py-1 rounded text-[11px] font-bold ${
-              styleMode === 'CADASTRO' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
-            }`}
-            title="Estilo vetorial claro inspirado na planta cadastral (Anexos 2 e 3)"
-          >
-            Cadastral
-          </button>
-          <button
-            onClick={() => setStyleMode('DARK')}
-            className={`px-2 py-1 rounded text-[11px] font-bold ${
-              styleMode === 'DARK' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Dark
-          </button>
-        </div>
-
-        <button
-          onClick={resetOrientation}
-          className="p-1.5 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-colors"
-          title="Restaurar orientação Norte / 0°"
-        >
-          <RotateCcw className="w-3.5 h-3.5 text-sky-400" />
-        </button>
-      </div>
-
-
       {/* Container WebGL do MapLibre */}
       <div ref={mapContainerRef} className="w-full h-full" />
 

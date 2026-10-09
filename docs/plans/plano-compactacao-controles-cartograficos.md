@@ -8,14 +8,16 @@
 
 ## Resultado
 
-- A barra agora contém somente os grupos **Mapa**, **Ocorrências**, **Painéis** e **Exibição**.
-- O menu **Mapa** preserva os seis motores com rótulos curtos e descrições completas.
+- O HUD agora usa um único `megamenu-wide` no topo, com quatro títulos curtos: **Filtros**, **Mapa**, **Motor** e **Ações**.
+- Cada título abre um popover largo e horizontal que preserva os controles dos blocos anteriores; no mobile, um único botão **Controles** abre a composição vertical.
+- **Filtros** concentra distrito, categorias e fontes; **Mapa** contém Mapa, Ocorrências, Painéis e Exibição; **Motor** reúne os controles contextuais do motor ativo; **Ações** absorve a antiga barra inferior.
+- O menu interno **Mapa** preserva os seis motores com rótulos e descrições curtas.
 - **Ocorrências** oferece Agrupadas/Individuais somente no Leaflet e informa “Definido pelo mapa” nos demais motores.
 - **Painéis** controla Lista sincronizada e Estatísticas sem alterar o mapa; ambos podem ser exibidos simultaneamente.
 - **Exibição** controla Pontos cegos e Alto contraste; Pontos cegos é desabilitado com explicação no motor 3D.
 - O antigo atalho secundário de heatmap foi eliminado; Calor permanece um modo cartográfico próprio.
 - Os menus ajustam o alinhamento ao espaço disponível para não serem cortados em telas estreitas.
-- Validações concluídas: seis seleções de mapa, árvore de acessibilidade, desktop, mobile 390 × 844, `npm run lint` e `npm run build`.
+- A etapa anterior teve validação visual desktop/mobile; a consolidação em megamenu foi verificada por `npm run lint`, `npm run build` e inspeção estrutural focada.
 - A implementação permanece isolada e não foi promovida para a branch acompanhada pela Railway.
 
 ## Problema

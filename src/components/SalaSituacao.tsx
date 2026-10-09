@@ -4,14 +4,14 @@ import {
   Hash, MapPin, X, Eye, EyeOff, Activity, BarChart3, List,
   Plus, Database, Shield, Users, Car, History, Sparkles, Info, Check, SlidersHorizontal,
   Radio, Hexagon, Globe, BookOpen, Mountain, ChevronRight, ChevronLeft, ChevronDown, Sliders,
-  Maximize2, Minimize2
+  Maximize2, Minimize2, Compass, RotateCcw
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { subprefeituras } from '../data';
 import { Chamado, Subprefeitura, FonteDadosPublica, PontoFontePublica, HotspotCruzamento, BibliotecaPublicaGeolocalizada, MapEngineType } from '../types';
 import { UserSession } from '../LoginTypes';
 import MapComponent from './MapComponent';
-import MapLibreMapComponent from './MapLibreMapComponent';
+import MapLibreMapComponent, { MapLibreStyleMode } from './MapLibreMapComponent';
 import DeckGlMapComponent from './DeckGlMapComponent';
 import D3MapComponent from './D3MapComponent';
 import HexbinMapComponent from './HexbinMapComponent';
@@ -25,6 +25,7 @@ import { CATALOGO_FONTES_PUBLICAS, ROTULO_FIXO_FONTE } from '../dataPublicSource
 import { useApp } from '../context/AppContext';
 import { executarCruzamentoCamadas } from '../utils/geoSpatial';
 import ControlDropdown from './ui/ControlDropdown';
+import MapControlsMegaMenu from './ui/MapControlsMegaMenu';
 
 type LayerFilter = 'SOCIAL' | 'ZELADORIA' | 'INFRAESTRUTURA' | 'TODOS';
 type DistrictFilter = 'TODOS' | 'Vila Mariana' | 'Moema' | 'Saúde';
@@ -174,6 +175,9 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
   const [isMetricsPanelOpen, setIsMetricsPanelOpen] = useState(true);
   const [isMobileMetricsOpen, setIsMobileMetricsOpen] = useState(false);
   const [isMobileFilterDrawerOpen, setIsMobileFilterDrawerOpen] = useState(false);
+  const [mapLibreStyleMode, setMapLibreStyleMode] = useState<MapLibreStyleMode>('STANDARD');
+  const [mapLibre3DMode, setMapLibre3DMode] = useState(true);
+  const [mapLibreResetVersion, setMapLibreResetVersion] = useState(0);
 
   // Cruzamento Geoespacial Contínuo (Interno SP156 x Externo Fontes Públicas)
   const { hotspots: hotspotsCruzamento, resumo: resumoCruzamento } = useMemo(() => {
@@ -301,6 +305,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 chamados={filteredChamados}
                 viewMode={viewMode}
                 mapEngineMode="LEAFLET"
+                showEngineHeader={false}
                 showPontosCegos={showPontosCegos}
                 onMarkerClick={handleMarkerClick}
                 selectedSubprefeitura={selectedSubprefeitura}
@@ -325,6 +330,9 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 highContrast={highContrastMode}
                 crossAnalysisActive={crossAnalysisActive}
                 hotspotsCruzamento={hotspotsCruzamento}
+                is3DMode={mapLibre3DMode}
+                styleMode={mapLibreStyleMode}
+                resetOrientationVersion={mapLibreResetVersion}
               />
             )}
 
@@ -333,6 +341,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 chamados={filteredChamados}
                 viewMode="NORMAL"
                 mapEngineMode="SATELITE_ORTOFOTO"
+                showEngineHeader={false}
                 showPontosCegos={showPontosCegos}
                 onMarkerClick={handleMarkerClick}
                 selectedSubprefeitura={selectedSubprefeitura}
@@ -351,6 +360,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 chamados={filteredChamados}
                 viewMode="NORMAL"
                 mapEngineMode="CHOROPLETH_32_SUBS"
+                showEngineHeader={false}
                 showPontosCegos={showPontosCegos}
                 onMarkerClick={handleMarkerClick}
                 selectedSubprefeitura={selectedSubprefeitura}
@@ -369,6 +379,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 chamados={filteredChamados}
                 viewMode="NORMAL"
                 mapEngineMode="SERVICE_BUFFERS"
+                showEngineHeader={false}
                 showPontosCegos={showPontosCegos}
                 onMarkerClick={handleMarkerClick}
                 selectedSubprefeitura={selectedSubprefeitura}
@@ -388,6 +399,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 chamados={filteredChamados}
                 viewMode="HEATMAP"
                 mapEngineMode="HEATMAP_KERNEL"
+                showEngineHeader={false}
                 showPontosCegos={showPontosCegos}
                 onMarkerClick={handleMarkerClick}
                 selectedSubprefeitura={selectedSubprefeitura}
@@ -565,237 +577,326 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
         {/* 2. IN-MAP FLOATING CONTROLS (HUD) */}
         {!focusMode && (
           <>
-            {/* Top Control Bar HUD */}
-            <div className="absolute top-3 left-3 right-3 sm:left-4 sm:right-4 z-[35] pointer-events-none flex flex-wrap items-center justify-between gap-2.5">
-              {/* Left Cluster: Território, Camadas & Fontes */}
-              <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 p-1.5 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-2xl backdrop-blur-md text-white">
-                {/* Filtro intraterritorial da SUB-VM */}
-                <div className="flex items-center gap-1 px-2 py-1 bg-slate-800/90 rounded-xl border border-slate-700/80">
-                  <MapPin className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                  <select
-                    className="bg-transparent text-xs font-semibold text-white focus:ring-0 cursor-pointer outline-none max-w-[150px] sm:max-w-[190px] truncate"
-                    value={selectedDistrict}
-                    onChange={(e) => {
-                      setSelectedDistrict(e.target.value as DistrictFilter);
-                      setSelectedChamado(null);
-                      setSelectedPublicPoint(null);
-                    }}
-                    title="Filtrar chamados por distrito da SUB-VM"
-                  >
-                    <option value="TODOS" className="bg-slate-800 text-white">SUB-VM • Todos os distritos</option>
-                    <option value="Vila Mariana" className="bg-slate-800 text-white">Distrito Vila Mariana</option>
-                    <option value="Moema" className="bg-slate-800 text-white">Distrito Moema</option>
-                    <option value="Saúde" className="bg-slate-800 text-white">Distrito Saúde</option>
-                  </select>
-                </div>
-
-            {/* Filtros Rápidos de Categorias */}
-            <div className="flex items-center gap-0.5 bg-slate-800/90 p-0.5 rounded-xl border border-slate-700/80">
-              {(['TODOS', 'ZELADORIA', 'INFRAESTRUTURA', 'SOCIAL'] as LayerFilter[]).map((layer) => {
-                const isActive = activeLayer === layer;
-                const label = layer === 'TODOS' ? 'Todos' : layer === 'ZELADORIA' ? 'Zeladoria' : layer === 'INFRAESTRUTURA' ? 'Infra' : 'Social';
-                return (
-                  <button
-                    key={layer}
-                    onClick={() => {
-                      setActiveLayer(layer);
-                      setSelectedChamado(null);
-                    }}
-                    className={`px-2 py-1 text-xs font-semibold rounded-lg transition-all whitespace-nowrap ${
-                      isActive
-                        ? layer === 'SOCIAL'
-                          ? 'bg-emerald-600 text-white shadow-xs'
-                          : 'bg-blue-600 text-white shadow-xs'
-                        : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Botão Fontes Públicas */}
-            <button
-              onClick={() => setIsAddSourceOpen(true)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-xl transition-all border whitespace-nowrap ${
-                activePublicSources.length > 0
-                  ? 'bg-purple-600 hover:bg-purple-700 text-white border-purple-500 shadow-md ring-1 ring-purple-400/50'
-                  : 'bg-slate-800/90 hover:bg-slate-700 text-purple-300 border-purple-900/60'
-              }`}
-              title="Adicionar novas fontes públicas de análise territorial"
-            >
-              <Database className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Fontes</span>
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
-                activePublicSources.length > 0
-                  ? 'bg-white text-purple-800'
-                  : 'bg-purple-900 text-purple-200'
-              }`}>
-                {activePublicSources.length}
-              </span>
-            </button>
-          </div>
-
-          {/* Right Cluster: quatro grupos de controle com responsabilidades separadas */}
-          <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 rounded-2xl border border-slate-700/80 bg-slate-900/90 p-1.5 text-white shadow-2xl backdrop-blur-md">
-            <ControlDropdown
-              label="Mapa"
-              value={engineControlConfig.shortLabel}
-              align="start"
-              icon={<MapIcon className="h-3.5 w-3.5 shrink-0 text-sky-400" />}
-              options={availableEngines.map((engine) => {
-                const engineId = engine.id as DemoMapEngine;
-                const config = MAP_ENGINE_CONTROL_CONFIG[engineId] || FALLBACK_ENGINE_CONFIG;
-                return {
-                  id: engine.id,
-                  label: config.shortLabel,
-                  description: config.description,
-                  selected: activeMapEngine === engine.id,
-                  onSelect: () => handleMapEngineSelect(engineId)
-                };
-              })}
-            />
-
-            <ControlDropdown
-              label="Ocorrências"
-              value={occurrenceSummary}
-              align="start"
-              icon={<Layers className="h-3.5 w-3.5 shrink-0 text-blue-400" />}
-              disabled={occurrenceControlDisabled}
-              disabledReason={occurrenceControlDisabled ? 'A representação é definida automaticamente pelo mapa selecionado.' : undefined}
-              options={[
+            {/* Megamenu cartográfico único: os quatro blocos anteriores permanecem horizontais nos popovers */}
+            <MapControlsMegaMenu
+              groups={[
                 {
-                  id: 'cluster',
-                  label: 'Agrupadas',
-                  description: 'Agrupa ocorrências próximas para reduzir sobreposição.',
-                  selected: viewMode === 'CLUSTER',
-                  onSelect: () => setViewMode('CLUSTER')
+                  id: 'territorio',
+                  label: 'Filtros',
+                  icon: <MapPin className="h-3.5 w-3.5 shrink-0 text-sky-400" />,
+                  content: (
+                    <>
+                      <div className="flex items-center gap-1 rounded-xl border border-slate-700/80 bg-slate-800/90 px-2 py-1">
+                        <MapPin className="h-3.5 w-3.5 shrink-0 text-sky-400" />
+                        <select
+                          className="max-w-[190px] cursor-pointer truncate bg-transparent text-xs font-semibold text-white outline-none focus:ring-0"
+                          value={selectedDistrict}
+                          onChange={(event) => {
+                            setSelectedDistrict(event.target.value as DistrictFilter);
+                            setSelectedChamado(null);
+                            setSelectedPublicPoint(null);
+                          }}
+                          title="Filtrar chamados por distrito da SUB-VM"
+                        >
+                          <option value="TODOS" className="bg-slate-800 text-white">SUB-VM • Todos os distritos</option>
+                          <option value="Vila Mariana" className="bg-slate-800 text-white">Distrito Vila Mariana</option>
+                          <option value="Moema" className="bg-slate-800 text-white">Distrito Moema</option>
+                          <option value="Saúde" className="bg-slate-800 text-white">Distrito Saúde</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-0.5 rounded-xl border border-slate-700/80 bg-slate-800/90 p-0.5">
+                        {(['TODOS', 'ZELADORIA', 'INFRAESTRUTURA', 'SOCIAL'] as LayerFilter[]).map((layer) => {
+                          const isActive = activeLayer === layer;
+                          const label = layer === 'TODOS' ? 'Todos' : layer === 'ZELADORIA' ? 'Zeladoria' : layer === 'INFRAESTRUTURA' ? 'Infra' : 'Social';
+                          return (
+                            <button
+                              key={layer}
+                              type="button"
+                              onClick={() => {
+                                setActiveLayer(layer);
+                                setSelectedChamado(null);
+                              }}
+                              className={`whitespace-nowrap rounded-lg px-2 py-1 text-xs font-semibold transition-all ${
+                                isActive
+                                  ? layer === 'SOCIAL'
+                                    ? 'bg-emerald-600 text-white shadow-xs'
+                                    : 'bg-blue-600 text-white shadow-xs'
+                                  : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <button
+                        type="button"
+                        data-close-megamenu
+                        onClick={() => setIsAddSourceOpen(true)}
+                        className={`flex items-center gap-1.5 whitespace-nowrap rounded-xl border px-2.5 py-1 text-xs font-bold transition-all ${
+                          activePublicSources.length > 0
+                            ? 'border-purple-500 bg-purple-600 text-white shadow-md ring-1 ring-purple-400/50 hover:bg-purple-700'
+                            : 'border-purple-900/60 bg-slate-800/90 text-purple-300 hover:bg-slate-700'
+                        }`}
+                        title="Adicionar novas fontes públicas de análise territorial"
+                      >
+                        <Database className="h-3.5 w-3.5" />
+                        <span>Fontes</span>
+                        <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
+                          activePublicSources.length > 0
+                            ? 'bg-white text-purple-800'
+                            : 'bg-purple-900 text-purple-200'
+                        }`}>
+                          {activePublicSources.length}
+                        </span>
+                      </button>
+                    </>
+                  )
                 },
                 {
-                  id: 'normal',
-                  label: 'Individuais',
-                  description: 'Exibe cada ocorrência como um marcador independente.',
-                  selected: viewMode === 'NORMAL',
-                  onSelect: () => setViewMode('NORMAL')
+                  id: 'visualizacao',
+                  label: 'Mapa',
+                  icon: <MapIcon className="h-3.5 w-3.5 shrink-0 text-blue-400" />,
+                  content: (
+                    <>
+                      <ControlDropdown
+                        label="Mapa"
+                        value={engineControlConfig.shortLabel}
+                        align="start"
+                        icon={<MapIcon className="h-3.5 w-3.5 shrink-0 text-sky-400" />}
+                        options={availableEngines.map((engine) => {
+                          const engineId = engine.id as DemoMapEngine;
+                          const config = MAP_ENGINE_CONTROL_CONFIG[engineId] || FALLBACK_ENGINE_CONFIG;
+                          return {
+                            id: engine.id,
+                            label: config.shortLabel,
+                            description: config.description,
+                            selected: activeMapEngine === engine.id,
+                            onSelect: () => handleMapEngineSelect(engineId)
+                          };
+                        })}
+                      />
+
+                      <ControlDropdown
+                        label="Ocorrências"
+                        value={occurrenceSummary}
+                        align="start"
+                        icon={<Layers className="h-3.5 w-3.5 shrink-0 text-blue-400" />}
+                        disabled={occurrenceControlDisabled}
+                        disabledReason={occurrenceControlDisabled ? 'A representação é definida automaticamente pelo mapa selecionado.' : undefined}
+                        options={[
+                          {
+                            id: 'cluster',
+                            label: 'Agrupadas',
+                            description: 'Agrupa ocorrências próximas para reduzir sobreposição.',
+                            selected: viewMode === 'CLUSTER',
+                            onSelect: () => setViewMode('CLUSTER')
+                          },
+                          {
+                            id: 'normal',
+                            label: 'Individuais',
+                            description: 'Exibe cada ocorrência como um marcador independente.',
+                            selected: viewMode === 'NORMAL',
+                            onSelect: () => setViewMode('NORMAL')
+                          }
+                        ]}
+                      />
+
+                      <ControlDropdown
+                        label="Painéis"
+                        value={panelsSummary}
+                        align="start"
+                        icon={<List className="h-3.5 w-3.5 shrink-0 text-violet-400" />}
+                        selectionMode="multiple"
+                        options={[
+                          {
+                            id: 'lista',
+                            label: 'Lista sincronizada',
+                            description: 'Abre a relação de chamados sem alterar a representação do mapa.',
+                            selected: isListOpen,
+                            onSelect: () => setIsListOpen((open) => !open)
+                          },
+                          {
+                            id: 'estatisticas',
+                            label: 'Estatísticas',
+                            description: 'Exibe indicadores e distribuição por categoria.',
+                            selected: isAnalyticsOpen,
+                            onSelect: () => setIsAnalyticsOpen((open) => !open)
+                          }
+                        ]}
+                      />
+
+                      <ControlDropdown
+                        label="Exibição"
+                        value={displaySummary}
+                        icon={<Sliders className="h-3.5 w-3.5 shrink-0 text-amber-400" />}
+                        selectionMode="multiple"
+                        options={[
+                          {
+                            id: 'pontos-cegos',
+                            label: 'Pontos cegos',
+                            description: 'Destaca áreas com acúmulo de chamados atrasados.',
+                            disabled: !engineControlConfig.blindSpots,
+                            disabledReason: !engineControlConfig.blindSpots ? 'Indisponível no motor 3D.' : undefined,
+                            selected: showPontosCegos && engineControlConfig.blindSpots,
+                            onSelect: () => setShowPontosCegos((show) => !show)
+                          },
+                          {
+                            id: 'alto-contraste',
+                            label: 'Alto contraste',
+                            description: 'Otimiza cores e legibilidade para apresentação em telão.',
+                            selected: highContrastMode,
+                            onSelect: () => setHighContrastMode((enabled) => !enabled)
+                          }
+                        ]}
+                      />
+                    </>
+                  )
+                },
+                {
+                  id: 'motor',
+                  label: 'Motor',
+                  icon: <Globe className="h-3.5 w-3.5 shrink-0 text-cyan-400" />,
+                  content: (
+                    <>
+                      <div className="flex items-center gap-1.5 rounded-lg border border-sky-800 bg-sky-950 px-2 py-1 text-xs font-bold text-sky-300">
+                        <Globe className="h-3.5 w-3.5 text-sky-400" />
+                        <span>{availableEngines.find((engine) => engine.id === activeMapEngine)?.nome || engineControlConfig.shortLabel}</span>
+                      </div>
+
+                      {activeMapEngine === 'MAPLIBRE_GL' ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setMapLibre3DMode((enabled) => !enabled)}
+                            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-all ${
+                              mapLibre3DMode
+                                ? 'border-blue-400 bg-blue-600 text-white shadow-sm'
+                                : 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
+                            }`}
+                            title="Alternar entre projeção plana 2D e perspectiva isométrica 3D"
+                          >
+                            <Compass className={`h-3.5 w-3.5 ${mapLibre3DMode ? 'rotate-45 text-amber-300' : ''}`} />
+                            <span>{mapLibre3DMode ? 'Perspectiva 3D' : 'Planta 2D'}</span>
+                          </button>
+
+                          <div className="flex items-center rounded-lg border border-slate-700 bg-slate-800 p-0.5">
+                            {([
+                              ['STANDARD', 'OSM HOT'],
+                              ['CADASTRO', 'Cadastral'],
+                              ['DARK', 'Dark']
+                            ] as Array<[MapLibreStyleMode, string]>).map(([style, label]) => (
+                              <button
+                                key={style}
+                                type="button"
+                                onClick={() => setMapLibreStyleMode(style)}
+                                className={`rounded px-2 py-1 text-[11px] font-bold ${
+                                  mapLibreStyleMode === style
+                                    ? style === 'DARK' ? 'bg-slate-700 text-white' : style === 'CADASTRO' ? 'bg-indigo-600 text-white' : 'bg-blue-600 text-white'
+                                    : 'text-slate-400 hover:text-white'
+                                }`}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMapLibre3DMode(false);
+                              setMapLibreResetVersion((version) => version + 1);
+                            }}
+                            className="rounded-lg border border-slate-700 bg-slate-800 p-1.5 text-slate-400 transition-colors hover:bg-slate-700 hover:text-white"
+                            title="Restaurar orientação Norte / 0°"
+                            aria-label="Restaurar orientação Norte / 0°"
+                          >
+                            <RotateCcw className="h-3.5 w-3.5 text-sky-400" />
+                          </button>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-3 text-xs text-slate-300">
+                          <span>{engineControlConfig.description}</span>
+                          <span className="rounded border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-[10px] text-slate-400">
+                            {filteredChamados.length} ocorrências
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  )
+                },
+                {
+                  id: 'operacoes',
+                  label: 'Ações',
+                  icon: <Sparkles className="h-3.5 w-3.5 shrink-0 text-purple-400" />,
+                  content: (
+                    <>
+                      <button
+                        type="button"
+                        data-close-megamenu
+                        onClick={() => setIsCrossPanelOpen(true)}
+                        className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold shadow-md transition-all ${
+                          crossAnalysisActive
+                            ? 'border-purple-500 bg-purple-600 text-white ring-2 ring-purple-500/40 hover:bg-purple-700'
+                            : 'border-slate-700 bg-slate-800/90 text-slate-200 hover:bg-slate-700'
+                        }`}
+                        title="Abrir painel de correlação e cruzamento entre demandas SP156 e fontes públicas"
+                      >
+                        <Sparkles className="h-3.5 w-3.5 text-purple-300" />
+                        <span>Cruzamento de Camadas</span>
+                        <span className={`rounded-full px-1.5 py-0.2 font-mono text-[10px] font-extrabold ${
+                          crossAnalysisActive ? 'border border-purple-700 bg-purple-950 text-purple-200' : 'bg-slate-900 text-slate-400'
+                        }`}>
+                          {hotspotsCruzamento.length}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        data-close-megamenu
+                        onClick={() => setIsCamadasPanelOpen(true)}
+                        className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/90 px-2.5 py-1.5 text-xs font-bold text-slate-200 shadow-xs transition-all hover:bg-slate-700"
+                        title="Gerenciar mapeamento de camadas externas, persistência e bibliotecas"
+                      >
+                        <SlidersHorizontal className="h-3.5 w-3.5 text-purple-400" />
+                        <span>Camadas & Fontes</span>
+                        <span className="rounded-full border border-purple-800 bg-purple-950 px-1.5 py-0.2 font-mono text-[10px] font-bold text-purple-300">
+                          {camadasAtivasCount}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        data-close-megamenu
+                        onClick={() => {
+                          if (bibliotecasPublicas.length > 0) {
+                            setModalBiblioteca(bibliotecasPublicas[0]);
+                          }
+                        }}
+                        className="flex items-center gap-1.5 rounded-xl border border-red-900/60 bg-red-950/70 px-2.5 py-1.5 text-xs font-bold text-rose-200 shadow-xs transition-all hover:bg-red-900/80"
+                        title="Ver prontuário das Bibliotecas Públicas de SP"
+                      >
+                        <BookOpen className="h-3.5 w-3.5 text-rose-400" />
+                        <span>Bibliotecas SP</span>
+                        <span className="rounded-full bg-red-900 px-1.5 py-0.2 font-mono text-[10px] text-rose-200">
+                          {bibliotecasPublicas.length}
+                        </span>
+                      </button>
+
+                      <div className="border-l border-slate-700 pl-1">
+                        <LiveIndicator
+                          secondsAgo={secondsAgo}
+                          isUpdating={isUpdating}
+                          onRefresh={triggerLiveUpdate}
+                        />
+                      </div>
+                    </>
+                  )
                 }
               ]}
             />
-
-            <ControlDropdown
-              label="Painéis"
-              value={panelsSummary}
-              align="start"
-              icon={<List className="h-3.5 w-3.5 shrink-0 text-violet-400" />}
-              selectionMode="multiple"
-              options={[
-                {
-                  id: 'lista',
-                  label: 'Lista sincronizada',
-                  description: 'Abre a relação de chamados sem alterar a representação do mapa.',
-                  selected: isListOpen,
-                  onSelect: () => setIsListOpen((open) => !open)
-                },
-                {
-                  id: 'estatisticas',
-                  label: 'Estatísticas',
-                  description: 'Exibe indicadores e distribuição por categoria.',
-                  selected: isAnalyticsOpen,
-                  onSelect: () => setIsAnalyticsOpen((open) => !open)
-                }
-              ]}
-            />
-
-            <ControlDropdown
-              label="Exibição"
-              value={displaySummary}
-              icon={<Sliders className="h-3.5 w-3.5 shrink-0 text-amber-400" />}
-              selectionMode="multiple"
-              options={[
-                {
-                  id: 'pontos-cegos',
-                  label: 'Pontos cegos',
-                  description: 'Destaca áreas com acúmulo de chamados atrasados.',
-                  disabled: !engineControlConfig.blindSpots,
-                  disabledReason: !engineControlConfig.blindSpots ? 'Indisponível no motor 3D.' : undefined,
-                  selected: showPontosCegos && engineControlConfig.blindSpots,
-                  onSelect: () => setShowPontosCegos((show) => !show)
-                },
-                {
-                  id: 'alto-contraste',
-                  label: 'Alto contraste',
-                  description: 'Otimiza cores e legibilidade para apresentação em telão.',
-                  selected: highContrastMode,
-                  onSelect: () => setHighContrastMode((enabled) => !enabled)
-                }
-              ]}
-            />
-          </div>
-        </div>
-
-        {/* Bottom Operations Floating Dock */}
-        <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 z-20 pointer-events-none flex flex-wrap items-center gap-2">
-          <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 p-1.5 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-2xl backdrop-blur-md text-white text-xs">
-            {/* Botão Cruzamento de Camadas */}
-            <button
-              onClick={() => setIsCrossPanelOpen(true)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all shadow-md ${
-                crossAnalysisActive
-                  ? 'bg-purple-600 hover:bg-purple-700 text-white border-purple-500 ring-2 ring-purple-500/40'
-                  : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 border-slate-700'
-              }`}
-              title="Abrir painel de correlação e cruzamento entre demandas SP156 e fontes públicas"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-purple-300" />
-              <span className="hidden sm:inline">Cruzamento de Camadas</span>
-              <span className="sm:hidden">Cruzamento</span>
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-extrabold ${
-                crossAnalysisActive ? 'bg-purple-950 text-purple-200 border border-purple-700' : 'bg-slate-900 text-slate-400'
-              }`}>
-                {hotspotsCruzamento.length}
-              </span>
-            </button>
-
-            {/* Botão Camadas & Fontes */}
-            <button
-              onClick={() => setIsCamadasPanelOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border border-slate-700 bg-slate-800/90 hover:bg-slate-700 text-slate-200 transition-all shadow-xs"
-              title="Gerenciar mapeamento de camadas externas (GeoJSON/WMS), persistência e bibliotecas"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5 text-purple-400" />
-              <span className="hidden md:inline">Camadas & Fontes</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-purple-950 text-purple-300 border border-purple-800">
-                {camadasAtivasCount}
-              </span>
-            </button>
-
-            {/* Botão Bibliotecas SP */}
-            <button
-              onClick={() => {
-                if (bibliotecasPublicas.length > 0) {
-                  setModalBiblioteca(bibliotecasPublicas[0]);
-                }
-              }}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border border-red-900/60 bg-red-950/70 hover:bg-red-900/80 text-rose-200 transition-all shadow-xs"
-              title="Ver prontuário e papel análogo das Bibliotecas Públicas de SP"
-            >
-              <BookOpen className="w-3.5 h-3.5 text-rose-400" />
-              <span className="hidden md:inline">Bibliotecas SP</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-red-900 text-rose-200">
-                {bibliotecasPublicas.length}
-              </span>
-            </button>
-
-            {/* Indicador de Atualização em Tempo Real */}
-            <div className="hidden lg:block pl-1 border-l border-slate-700">
-              <LiveIndicator 
-                secondsAgo={secondsAgo}
-                isUpdating={isUpdating}
-                onRefresh={triggerLiveUpdate}
-              />
-            </div>
-          </div>
-        </div>
 
         {/* Modo Foco / Mapa Limpo Toggle */}
         <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 z-[999] pointer-events-auto">

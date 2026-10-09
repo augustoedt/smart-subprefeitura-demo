@@ -262,6 +262,7 @@ interface MapComponentProps {
   onSelectBiblioteca?: (biblioteca: BibliotecaPublicaGeolocalizada) => void;
   crossAnalysisActive?: boolean;
   hotspotsCruzamento?: HotspotCruzamento[];
+  showEngineHeader?: boolean;
 }
 
 export default function MapComponent({ 
@@ -279,7 +280,8 @@ export default function MapComponent({
   onSelectSubprefeitura,
   onSelectBiblioteca,
   crossAnalysisActive = false,
-  hotspotsCruzamento = []
+  hotspotsCruzamento = [],
+  showEngineHeader = true
 }: MapComponentProps) {
   const selectedChamadoCoords = useMemo<[number, number] | undefined>(() => {
     return selectedChamado ? [selectedChamado.lat, selectedChamado.lng] : undefined;
@@ -710,8 +712,9 @@ export default function MapComponent({
       </MapContainer>
 
       {/* HUD Cartográfico Profissional Flutuante */}
-      <div className="absolute top-3 left-3 z-[400] flex flex-col gap-2 pointer-events-none max-w-[320px]">
+      <div className={`absolute left-3 z-[30] flex max-w-[320px] flex-col gap-2 pointer-events-none ${showEngineHeader ? 'top-3' : 'top-16'}`}>
         {/* Card do Motor Ativo */}
+        {showEngineHeader && (
         <div className="pointer-events-auto bg-slate-900/90 backdrop-blur-md text-white border border-slate-700/80 rounded-xl px-3 py-2 shadow-lg flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <div className={`p-1.5 rounded-lg ${
@@ -752,6 +755,7 @@ export default function MapComponent({
             {mapEngineMode}
           </span>
         </div>
+        )}
 
         {/* Legenda Dinâmica Especializada por Motor */}
         {isChoroplethMode && (

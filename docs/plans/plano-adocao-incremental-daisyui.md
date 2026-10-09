@@ -16,13 +16,15 @@ Adicionar o DaisyUI como camada de componentes sobre o Tailwind CSS v4 e criar u
 - DaisyUI `5.7.47` instalado sobre Tailwind CSS v4, sem substituir as classes existentes.
 - Tema exclusivo `subvm` registrado em `src/index.css`; temas padrão permanecem desabilitados.
 - `ControlDropdown` criado em `src/components/ui/` com estado React, teclado, foco, `Escape`, clique externo, opções desabilitadas e alinhamento adaptativo ao viewport.
-- Barra cartográfica reorganizada em **Mapa**, **Ocorrências**, **Painéis** e **Exibição**.
+- `MapControlsMegaMenu` criado com o padrão DaisyUI `megamenu-wide`: quatro títulos curtos no topo (**Filtros**, **Mapa**, **Motor**, **Ações**) e os controles anteriores preservados em popovers horizontais.
+- No mobile, o megamenu horizontal é substituído por um único botão **Controles** e conteúdo vertical.
+- A antiga barra operacional inferior e o HUD superior específico do MapLibre foram incorporados ao megamenu; controles 2D/3D, estilos e orientação continuam funcionais.
 - Seis motores preservados; controles contextuais seguem uma matriz explícita de capacidades.
 - Lista e Estatísticas foram desacopladas da representação cartográfica e podem ficar abertas simultaneamente.
 - **Legenda & Camadas** tornou-se recolhível, deixando somente um botão compacto de maximização no canto inferior esquerdo.
 - O toast inicial **“Subprefeitura Vila Mariana Conectada”** agora é removido automaticamente quatro segundos após ser exibido.
-- Validação visual aprovada em desktop e viewport móvel de 390 × 844; o recorte lateral do menu **Exibição: Contraste** foi corrigido com detecção de colisão.
-- `npm run lint` e `npm run build` aprovados. O artefato final ficou em 287,69 kB de CSS e 2.606,71 kB de JavaScript; o aumento relevante ficou concentrado no CSS do DaisyUI.
+- A etapa de dropdowns teve validação visual em desktop e viewport móvel de 390 × 844; o megamenu subsequente foi verificado sem automação de navegador, conforme solicitado.
+- `npm run lint` e `npm run build` aprovados. O artefato com megamenu ficou em 295,75 kB de CSS e 2.608,47 kB de JavaScript; o aumento adicional vem do componente `megamenu` do DaisyUI.
 - Piloto ainda não promovido para `feature/vila-mariana-only` nem para a Railway.
 
 ## Contexto atual

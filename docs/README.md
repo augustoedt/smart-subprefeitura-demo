@@ -57,8 +57,8 @@ Planos de trabalho ativos e documentos vivos de evolução contínua da soluçã
 - [`plano-expansao-geoespacial-e-indicadores.md`](plans/plano-expansao-geoespacial-e-indicadores.md) — Plano em execução para delimitação territorial, HUD e indicadores públicos de segurança/trânsito.
 - [`etapa-6-delimitacao-geografica.md`](plans/etapa-6-delimitacao-geografica.md) — Plano planejado para delimitação GeoJSON das 32 subprefeituras.
 - [`plano-recorte-demonstracao-sub-vm.md`](plans/plano-recorte-demonstracao-sub-vm.md) — **Plano executado**: recorte integral da demonstração para Vila Mariana, Moema e Saúde.
-- [`plano-compactacao-controles-cartograficos.md`](plans/plano-compactacao-controles-cartograficos.md) — **Plano futuro**: reorganizar a barra cartográfica em quatro dropdowns compactos e contextuais.
-- [`plano-adocao-incremental-daisyui.md`](plans/plano-adocao-incremental-daisyui.md) — **Plano futuro**: adotar DaisyUI sobre Tailwind v4 com tema institucional SUB-VM, começando pela barra cartográfica.
+- [`plano-compactacao-controles-cartograficos.md`](plans/plano-compactacao-controles-cartograficos.md) — **Piloto experimental implementado**: controles consolidados em megamenu wide com quatro grupos contextuais.
+- [`plano-adocao-incremental-daisyui.md`](plans/plano-adocao-incremental-daisyui.md) — **Piloto experimental implementado**: DaisyUI sobre Tailwind v4 com tema institucional SUB-VM e megamenu cartográfico.
 
 ### `runbooks/`
 Rotinas operacionais verificáveis para publicação e suporte do projeto.
