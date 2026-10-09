@@ -719,6 +719,7 @@ export default function MapComponent({
         {(viewMode === 'CLUSTER' && !isChoroplethMode && !isBuffersMode && !isHeatmapEngine) && (
           <MarkerClusterGroup
             chunkedLoading
+            showCoverageOnHover={false}
             iconCreateFunction={(cluster) => {
               const size = highContrastMode ? 46 : 40;
               return L.divIcon({

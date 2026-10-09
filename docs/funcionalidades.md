@@ -80,7 +80,7 @@ No desktop, a barra superior e cada popover horizontal se ajustam à largura de 
 
 - Filtro por distrito: Vila Mariana, Moema e Saúde.
 - Filtro temático: todos, zeladoria, infraestrutura e social.
-- Exibição de ocorrências em modo normal ou agrupado, conforme a capacidade do motor; agrupamentos usam um círculo dourado com a quantidade de chamados e se desfazem progressivamente ao ampliar o zoom.
+- Exibição de ocorrências em modo normal ou agrupado, conforme a capacidade do motor; agrupamentos usam um círculo dourado com a quantidade de chamados, sem polígono de cobertura no hover, e se desfazem progressivamente ao ampliar o zoom.
 - Ativação de pontos cegos quando suportada pelo motor selecionado.
 - Lista sincronizada com até 50 ocorrências.
 - Painel estatístico com indicadores e gráficos.

@@ -59,7 +59,7 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
 ### Entregas concluídas
 
 - **Clusters cartográficos e modais de aprovação responsivos**:
-  - Agrupamentos de chamados no Leaflet usam um círculo dourado uniforme com a quantidade centralizada e continuam se desagregando conforme o zoom.
+  - Agrupamentos de chamados no Leaflet usam um círculo dourado uniforme com a quantidade centralizada, sem o polígono azul de cobertura no hover, e continuam se desagregando conforme o zoom.
   - O modal detalhado dos cartões do Kanban respeita `100dvh`, mantém cabeçalho e rodapé acessíveis e aplica rolagem somente ao conteúdo.
   - A pré-visualização do chat WhatsApp disparada após a aprovação usa posicionamento fixo, altura limitada à viewport, conversa rolável e fechamento sempre acessível por botão, fundo ou `Escape`.
 
