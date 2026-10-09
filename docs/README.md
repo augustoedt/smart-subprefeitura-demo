@@ -8,6 +8,7 @@ Comece pelo [checkpoint autoritativo](checkpoints/project-state.md) para retomar
 
 | Antes de… | Leia |
 |---|---|
+| Conhecer, apresentar ou validar as funcionalidades disponíveis | [Catálogo de funcionalidades](funcionalidades.md) |
 | Publicar ou verificar a aplicação na Railway | [Runbook de deploy Railway](runbooks/deploy-railway.md) |
 | Retomar o desenvolvimento ou identificar o próximo passo | [Checkpoint do projeto](checkpoints/project-state.md) |
 
@@ -15,6 +16,10 @@ Estrutura oficial de documentação do projeto **Remix Smart Subprefeituras** (G
 Organizado seguindo o padrão de ecossistema do skill `docs-organization`.
 
 ---
+
+## Visão funcional
+
+- [`funcionalidades.md`](funcionalidades.md) — catálogo canônico das funcionalidades ativas, perfis, fluxos, integrações e limites da demonstração.
 
 ## Estrutura de Pastas e Suas Funções
 

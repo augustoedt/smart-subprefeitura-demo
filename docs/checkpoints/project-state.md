@@ -58,6 +58,10 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
 
 ### Entregas concluídas
 
+- **Catálogo funcional consolidado**:
+  - [`docs/funcionalidades.md`](../funcionalidades.md) documenta módulos ativos, perfis, fluxos integrados, cartografia, dados, integrações, responsividade e limites da demonstração.
+  - O catálogo diferencia recursos funcionais, comportamentos simulados e integração externa para evitar interpretar o protótipo como sistema transacional.
+
 - **Integração DaisyUI e megamenu cartográfico promovida para `main` e produção**:
   - Tema institucional `subvm`, `ControlDropdown` e `MapControlsMegaMenu` incorporados à linha principal.
   - Megamenu com quatro títulos curtos: Filtros, Mapa, Motor e Ações; popovers horizontais ajustados ao conteúdo no desktop e composição vertical no mobile.
@@ -268,10 +272,7 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
 2. **Homologar a versão publicada**:
    - Validar os fluxos dos quatro módulos na URL de produção e coletar feedback de gestores e usuários finais.
    - Avaliar a legibilidade das sobreposições de mapas de calor em monitores ultrawide e projetores, e validar os indicadores públicos fictícios.
-3. **Executar quando priorizados os planos de UI cartográfica**:
-   - Criar o tema DaisyUI `subvm` e os primitivos compartilhados.
-   - Implementar os quatro dropdowns compactos e a matriz de capacidades por motor, sem alterar os seis modos existentes.
-   - Prosseguir com a migração incremental somente após homologar o projeto-piloto.
+3. **Manter o catálogo funcional sincronizado**: atualizar [`docs/funcionalidades.md`](../funcionalidades.md) no mesmo commit sempre que uma capacidade ativa, perfil, integração ou limitação mudar.
 
 ---
 
@@ -286,6 +287,7 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
 
 ## Referências
 
+- [`docs/funcionalidades.md`](../funcionalidades.md) — Catálogo das funcionalidades ativas, fluxos, perfis e limites.
 - [`docs/README.md`](../README.md) — Índice da documentação.
 - [`docs/decisions/`](../decisions/) — Registros de decisão arquitetural (ADRs).
 - [`docs/plans/plano-evolucao-plataforma-govtech.md`](../plans/plano-evolucao-plataforma-govtech.md) — Plano de evolução.
