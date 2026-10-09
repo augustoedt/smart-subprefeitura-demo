@@ -1,0 +1,8 @@
+{
+  "name": "Smart Subprefeituras",
+  "description": "Plataforma GovTech de gestão de zeladoria urbana, assistência social e triagem operacional da Subprefeitura Vila Mariana (PMSP/SMSUB).",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

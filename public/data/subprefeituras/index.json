@@ -1,0 +1,231 @@
+{
+  "type": "SubprefeituraIndex",
+  "origem": "subdata/subprefeituras.geojson",
+  "total": 32,
+  "subprefeituras": [
+    {
+      "id": 26,
+      "nome": "Aricanduva/Vila Formosa",
+      "arquivo": "aricanduva-vila-formosa.geojson",
+      "bytes": 54537,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 10,
+      "nome": "Butantã",
+      "arquivo": "butanta.geojson",
+      "bytes": 69567,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 17,
+      "nome": "Campo Limpo",
+      "arquivo": "campo-limpo.geojson",
+      "bytes": 107239,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 19,
+      "nome": "Capela do Socorro",
+      "arquivo": "capela-do-socorro.geojson",
+      "bytes": 66002,
+      "geometria": "Polygon"
+    },
+    {
+      "id": "04",
+      "nome": "Casa Verde",
+      "arquivo": "casa-verde.geojson",
+      "bytes": 99715,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 16,
+      "nome": "Cidade Ademar",
+      "arquivo": "cidade-ademar.geojson",
+      "bytes": 72225,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 31,
+      "nome": "Cidade Tiradentes",
+      "arquivo": "cidade-tiradentes.geojson",
+      "bytes": 88933,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 22,
+      "nome": "Ermelino Matarazzo",
+      "arquivo": "ermelino-matarazzo.geojson",
+      "bytes": 62306,
+      "geometria": "Polygon"
+    },
+    {
+      "id": "03",
+      "nome": "Freguesia do Ó/Brasilândia",
+      "arquivo": "freguesia-do-o-brasilandia.geojson",
+      "bytes": 112240,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 28,
+      "nome": "Guaianazes",
+      "arquivo": "guaianazes.geojson",
+      "bytes": 128169,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 13,
+      "nome": "Ipiranga",
+      "arquivo": "ipiranga.geojson",
+      "bytes": 70112,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 24,
+      "nome": "Itaim Paulista",
+      "arquivo": "itaim-paulista.geojson",
+      "bytes": 84746,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 27,
+      "nome": "Itaquera",
+      "arquivo": "itaquera.geojson",
+      "bytes": 145460,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 15,
+      "nome": "Jabaquara",
+      "arquivo": "jabaquara.geojson",
+      "bytes": 41931,
+      "geometria": "Polygon"
+    },
+    {
+      "id": "06",
+      "nome": "Jaçanã/Tremembé",
+      "arquivo": "jacana-tremembe.geojson",
+      "bytes": 126376,
+      "geometria": "Polygon"
+    },
+    {
+      "id": "08",
+      "nome": "Lapa",
+      "arquivo": "lapa.geojson",
+      "bytes": 92936,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 18,
+      "nome": "M'Boi Mirim",
+      "arquivo": "m-boi-mirim.geojson",
+      "bytes": 86244,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 25,
+      "nome": "Mooca",
+      "arquivo": "mooca.geojson",
+      "bytes": 60770,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 20,
+      "nome": "Parelheiros",
+      "arquivo": "parelheiros.geojson",
+      "bytes": 355420,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 21,
+      "nome": "Penha",
+      "arquivo": "penha.geojson",
+      "bytes": 96498,
+      "geometria": "Polygon"
+    },
+    {
+      "id": "01",
+      "nome": "Perus",
+      "arquivo": "perus.geojson",
+      "bytes": 198559,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 11,
+      "nome": "Pinheiros",
+      "arquivo": "pinheiros.geojson",
+      "bytes": 49066,
+      "geometria": "Polygon"
+    },
+    {
+      "id": "02",
+      "nome": "Pirituba/Jaraguá",
+      "arquivo": "pirituba-jaragua.geojson",
+      "bytes": 156252,
+      "geometria": "Polygon"
+    },
+    {
+      "id": "05",
+      "nome": "Santana/Tucuruvi",
+      "arquivo": "santana-tucuruvi.geojson",
+      "bytes": 111900,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 14,
+      "nome": "Santo Amaro",
+      "arquivo": "santo-amaro.geojson",
+      "bytes": 56941,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 32,
+      "nome": "Sapopemba",
+      "arquivo": "sapopemba.geojson",
+      "bytes": 66676,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 30,
+      "nome": "São Mateus",
+      "arquivo": "sao-mateus.geojson",
+      "bytes": 158999,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 23,
+      "nome": "São Miguel",
+      "arquivo": "sao-miguel.geojson",
+      "bytes": 106912,
+      "geometria": "Polygon"
+    },
+    {
+      "id": "09",
+      "nome": "Sé",
+      "arquivo": "se.geojson",
+      "bytes": 51518,
+      "geometria": "Polygon"
+    },
+    {
+      "id": "07",
+      "nome": "Vila Maria/Vila Guilherme",
+      "arquivo": "vila-maria-vila-guilherme.geojson",
+      "bytes": 35659,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 12,
+      "nome": "Vila Mariana",
+      "arquivo": "vila-mariana.geojson",
+      "bytes": 45843,
+      "geometria": "Polygon"
+    },
+    {
+      "id": 29,
+      "nome": "Vila Prudente",
+      "arquivo": "vila-prudente.geojson",
+      "bytes": 57043,
+      "geometria": "Polygon"
+    }
+  ]
+}
