@@ -1,6 +1,6 @@
 # Plano — Compactação e separação dos controles cartográficos
 
-**Status:** implementado e validado na branch experimental `feature/daisyui-subvm-pilot`
+**Status:** implementado em `main` e publicado na Railway
 
 **Registrado em:** 2026-10-08
 
@@ -18,7 +18,7 @@
 - O antigo atalho secundário de heatmap foi eliminado; Calor permanece um modo cartográfico próprio.
 - Os menus ajustam o alinhamento ao espaço disponível para não serem cortados em telas estreitas.
 - A etapa anterior teve validação visual desktop/mobile; a consolidação em megamenu foi verificada por `npm run lint`, `npm run build` e inspeção estrutural focada.
-- A implementação permanece isolada e não foi promovida para a branch acompanhada pela Railway.
+- A implementação foi incorporada à `main`; Railway migrada para essa branch e deployment confirmado com sucesso.
 
 ## Problema
 

@@ -1,10 +1,10 @@
 # Plano — Adoção incremental do DaisyUI com tema institucional SUB-VM
 
-**Status:** piloto implementado e validado em branch experimental; homologação pendente
+**Status:** implementado em `main` e publicado na Railway
 
 **Registrado em:** 2026-10-08
 
-**Implementado em:** `feature/daisyui-subvm-pilot`
+**Implementado originalmente em:** `feature/daisyui-subvm-pilot`; incorporado à `main` em 2026-10-09
 **Relacionado:** [Compactação dos controles cartográficos](plano-compactacao-controles-cartograficos.md)
 
 ## Objetivo
@@ -25,7 +25,7 @@ Adicionar o DaisyUI como camada de componentes sobre o Tailwind CSS v4 e criar u
 - O toast inicial **“Subprefeitura Vila Mariana Conectada”** agora é removido automaticamente quatro segundos após ser exibido.
 - A etapa de dropdowns teve validação visual em desktop e viewport móvel de 390 × 844; o megamenu subsequente foi verificado sem automação de navegador, conforme solicitado.
 - `npm run lint` e `npm run build` aprovados. O artefato com megamenu ficou em 295,75 kB de CSS e 2.608,46 kB de JavaScript; o aumento adicional vem do componente `megamenu` do DaisyUI.
-- Piloto ainda não promovido para `feature/vila-mariana-only` nem para a Railway.
+- Implementação incorporada à `main`; Railway configurada para acompanhar `main` e deployment validado com sucesso.
 
 ## Contexto atual
 

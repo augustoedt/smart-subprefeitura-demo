@@ -1,12 +1,12 @@
 # Checkpoint — Estado do Projeto Remix Smart Subprefeituras
 
-> **Atualizado em 2026-10-08.** Este é o checkpoint autoritativo: ao retomar o trabalho (compactação de chat, troca de modelo ou nova sprint), comece obrigatoriamente por aqui.
+> **Atualizado em 2026-10-09.** Este é o checkpoint autoritativo: ao retomar o trabalho (compactação de chat, troca de modelo ou nova sprint), comece obrigatoriamente por aqui.
 
 ---
 
 ## Onde estamos
 
-**Produção Railway:** projeto e serviço `subprefeitura` publicados no ambiente `production` a partir do repositório `augustoedt/smart-subprefeitura-demo`, branch `feature/vila-mariana-only`; deployment `9bfe5448-b303-4e0a-a088-e1f1c860c94c` confirmado como `SUCCESS`. URL pública: [https://subprefeitura-production.up.railway.app](https://subprefeitura-production.up.railway.app), verificada com HTTP 200 em 2026-10-08. O deploy e os passos de verificação estão no [runbook Railway](../runbooks/deploy-railway.md). A análise de imagens usa `gemini-3.1-flash-lite`; `GEMINI_API_KEY` está configurada no serviço e o endpoint `/api/analyze-image` foi validado em produção com HTTP 200.
+**Produção Railway:** projeto e serviço `subprefeitura` publicados no ambiente `production` a partir do repositório `augustoedt/smart-subprefeitura-demo`, branch `main`; deployment `7884e1c1-a863-4a7a-a26a-f640efe9c37b` confirmado como `SUCCESS`. URL pública: [https://subprefeitura-production.up.railway.app](https://subprefeitura-production.up.railway.app), verificada com HTTP 200 em 2026-10-09. O deploy e os passos de verificação estão no [runbook Railway](../runbooks/deploy-railway.md). A análise de imagens usa `gemini-3.1-flash-lite`; `GEMINI_API_KEY` está configurada no serviço e o endpoint `/api/analyze-image` foi validado em produção com HTTP 200.
 
 A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente especializada para a **Subprefeitura Vila Mariana (SUB-VM)**, compreendendo os distritos de **Vila Mariana**, **Moema** e **Saúde**, com identidade visual governamental autêntica da Prefeitura de São Paulo, estética profissional limpa (sem vícios ou traços genéricos de IA), compartilhamento reativo de estado unificado e controle de acesso baseado em papéis (RBAC):
 
@@ -53,12 +53,18 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
 
 ## Em andamento
 
-- **Piloto experimental concluído; homologação pendente:** [Controles cartográficos](../plans/plano-compactacao-controles-cartograficos.md) consolidados em um `megamenu-wide` com quatro títulos curtos — Filtros, Mapa, Motor e Ações. Cada popover reproduz horizontalmente os controles anteriores; no mobile, um único botão Controles apresenta o conteúdo vertical. Os seis motores e a matriz de capacidades foram preservados.
-- **Piloto experimental concluído; sem promoção para produção:** [DaisyUI incremental](../plans/plano-adocao-incremental-daisyui.md) instalado na branch `feature/daisyui-subvm-pilot`, com tema `subvm`, `ControlDropdown` e `MapControlsMegaMenu`. Inclui legenda recolhível, expiração do toast inicial em quatro segundos e incorporação da antiga barra inferior e dos controles MapLibre ao megamenu. Lint e build foram aprovados; a branch `feature/vila-mariana-only` e a Railway permanecem inalteradas.
 - **Em execução:** [Plano de expansão geoespacial e indicadores](../plans/plano-expansao-geoespacial-e-indicadores.md), com delimitação territorial e correlações de segurança/trânsito pendentes de atualização do progresso por fase.
 - **Em execução parcial:** [Etapa 6 — delimitação geográfica](../plans/etapa-6-delimitacao-geografica.md). Os 32 contornos GeoJSON autoritativos foram copiados para `public/data/subprefeituras/`, associados aos IDs internos da aplicação e carregados sob demanda no modo coroplético. As malhas simuladas antigas foram removidas. Permanecem pendentes a eventual simplificação controlada das geometrias e a migração da renderização para o componente `<GeoJSON />` nativo do React-Leaflet.
 
 ### Entregas concluídas
+
+- **Integração DaisyUI e megamenu cartográfico promovida para `main` e produção**:
+  - Tema institucional `subvm`, `ControlDropdown` e `MapControlsMegaMenu` incorporados à linha principal.
+  - Megamenu `wide` com quatro títulos curtos: Filtros, Mapa, Motor e Ações; conteúdo horizontal no desktop e vertical no mobile.
+  - Antigas barras superiores e inferior consolidadas; controles MapLibre preservados dentro do grupo Motor.
+  - Branches de feature locais e remotas removidas após o merge.
+  - Railway migrada para `main`; deployment `7884e1c1-a863-4a7a-a26a-f640efe9c37b` confirmado como `SUCCESS`.
+  - `npm run lint`, `npm run build` e instalação congelada aprovados.
 
 - **Sprint 21 (Recorte Territorial Exclusivo da Demonstração SUB-VM) concluída e validada em produção**:
   - Runtime, chamados, fontes públicas, equipamentos e módulo social restritos à Subprefeitura Vila Mariana.

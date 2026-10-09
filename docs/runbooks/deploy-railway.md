@@ -1,6 +1,6 @@
 # Deploy e verificação na Railway
 
-> **Verificado em:** 2026-10-08 — primeiro deploy em produção do projeto `subprefeitura`.
+> **Verificado em:** 2026-10-09 — produção do projeto `subprefeitura` acompanhando `main`.
 
 ## Quando
 
@@ -10,7 +10,7 @@ Publicar a aplicação deste diretório na Railway e verificar se o deploy está
 
 - CLI Railway instalada e autenticada na conta com acesso ao projeto `subprefeitura`.
 - Projeto e serviço de aplicação chamados `subprefeitura`, no ambiente `production`.
-- Serviço conectado ao repositório `augustoedt/smart-subprefeitura-demo`, acompanhando a branch `feature/vila-mariana-only`.
+- Serviço conectado ao repositório `augustoedt/smart-subprefeitura-demo`, acompanhando a branch `main`.
 - O servidor Express em `server.ts` escuta em `0.0.0.0:3000`; a porta pública do serviço deve encaminhar para `3000`.
 - `npm run build` gera os artefatos de produção e `npm start` inicia `dist/server.cjs`.
 - A integração de análise de imagem depende de `GEMINI_API_KEY`, configurada em **Railway → serviço `subprefeitura` → Variables**. Não registre o valor do segredo neste documento.
@@ -35,7 +35,7 @@ Publicar a aplicação deste diretório na Railway e verificar se o deploy está
 3. Publique a branch acompanhada pelo serviço. O push dispara o deployment automaticamente:
 
    ```bash
-   git push origin feature/vila-mariana-only
+   git push origin main
    ```
 
    Para uma publicação manual excepcional, ainda é possível usar `railway up --service subprefeitura --environment production --detach -m "Resumo da publicação"`.
@@ -62,7 +62,7 @@ Publicar a aplicação deste diretório na Railway e verificar se o deploy está
 
 ## Verificação
 
-Em 2026-10-08, `npm run lint` e `npm run build` passaram, o deployment atingiu `SUCCESS`, a URL pública retornou HTTP 200 e `/api/analyze-image` respondeu HTTP 200 usando `gemini-3.1-flash-lite`. Isso valida a publicação e a integração Gemini; não substitui a homologação dos fluxos completos dos módulos.
+Em 2026-10-09, `npm run lint` e `npm run build` passaram, a Railway foi migrada para `main`, o deployment `7884e1c1-a863-4a7a-a26a-f640efe9c37b` atingiu `SUCCESS` e a URL pública retornou HTTP 200. A integração `/api/analyze-image` permanece configurada com `gemini-3.1-flash-lite`. Isso valida a publicação e a integração Gemini; não substitui a homologação dos fluxos completos dos módulos.
 
 ## Não fazer
 
