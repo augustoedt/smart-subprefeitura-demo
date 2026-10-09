@@ -14,6 +14,7 @@ import {
 import { Chamado, Subprefeitura, FonteDadosPublica, PontoFontePublica, HotspotCruzamento, MapEngineType, BibliotecaPublicaGeolocalizada, MetricasRegionais } from '../types';
 import { subprefeituras } from '../data';
 import { loadSubprefeituraPolygons, SubprefeituraPolygons } from '../subprefeituraBoundaries';
+import { DistrictBoundary, loadDistrictBoundaries } from '../districtBoundaries';
 import { BIBLIOTECAS_PUBLICAS_SP } from '../dataLayerMapping';
 
 const BIBLIOTECAS_SUB_VM = BIBLIOTECAS_PUBLICAS_SP.filter(
@@ -263,6 +264,8 @@ interface MapComponentProps {
   crossAnalysisActive?: boolean;
   hotspotsCruzamento?: HotspotCruzamento[];
   showEngineHeader?: boolean;
+  showSubprefeituraBoundary?: boolean;
+  showDistrictBoundaries?: boolean;
 }
 
 export default function MapComponent({ 
@@ -281,7 +284,9 @@ export default function MapComponent({
   onSelectBiblioteca,
   crossAnalysisActive = false,
   hotspotsCruzamento = [],
-  showEngineHeader = true
+  showEngineHeader = true,
+  showSubprefeituraBoundary = true,
+  showDistrictBoundaries = false
 }: MapComponentProps) {
   const selectedChamadoCoords = useMemo<[number, number] | undefined>(() => {
     return selectedChamado ? [selectedChamado.lat, selectedChamado.lng] : undefined;
@@ -430,10 +435,11 @@ export default function MapComponent({
   const isBuffersMode = mapEngineMode === 'SERVICE_BUFFERS';
   const isHeatmapEngine = mapEngineMode === 'HEATMAP_KERNEL';
   const [subprefeituraPolygons, setSubprefeituraPolygons] = useState<SubprefeituraPolygons>({});
+  const [districtBoundaries, setDistrictBoundaries] = useState<DistrictBoundary[]>([]);
   const [boundaryLoadState, setBoundaryLoadState] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
 
   useEffect(() => {
-    if (!isChoroplethMode) return;
+    if (!isChoroplethMode && !showSubprefeituraBoundary) return;
 
     const controller = new AbortController();
     setBoundaryLoadState('loading');
@@ -450,7 +456,21 @@ export default function MapComponent({
       });
 
     return () => controller.abort();
-  }, [isChoroplethMode]);
+  }, [isChoroplethMode, showSubprefeituraBoundary]);
+
+  useEffect(() => {
+    if (!showDistrictBoundaries) return;
+
+    const controller = new AbortController();
+    loadDistrictBoundaries(controller.signal)
+      .then(setDistrictBoundaries)
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+        console.error('Falha ao carregar os distritos da SUB-VM:', error);
+      });
+
+    return () => controller.abort();
+  }, [showDistrictBoundaries]);
 
   return (
     <div className={`w-full h-full rounded-xl overflow-hidden border shadow-sm relative z-0 ${
@@ -506,6 +526,7 @@ export default function MapComponent({
               key={`choropleth-poly-${subId}`}
               positions={coords}
               pathOptions={{
+                stroke: false,
                 color: isSelected ? '#ffffff' : highContrastMode ? '#cbd5e1' : '#334155',
                 weight: isSelected ? 3 : 1.5,
                 fillColor: cor,
@@ -557,6 +578,42 @@ export default function MapComponent({
             </Polygon>
           );
         })}
+
+        {/* Divisões distritais oficiais, sem hover ou captura de ponteiro. */}
+        {showDistrictBoundaries && districtBoundaries.map((district) => (
+          <Polygon
+            key={`district-boundary-${district.id}`}
+            positions={district.coordinates}
+            interactive={false}
+            pathOptions={{
+              color: highContrastMode ? '#fbbf24' : '#d97706',
+              weight: highContrastMode ? 3.5 : 2.5,
+              opacity: 0.95,
+              fillOpacity: 0,
+              dashArray: '4, 5',
+              lineCap: 'round',
+              lineJoin: 'round'
+            }}
+          />
+        ))}
+
+        {/* Contorno territorial oficial, desenhado sobre as divisões distritais. */}
+        {showSubprefeituraBoundary && Object.entries(subprefeituraPolygons).map(([subId, coords]) => (
+          <Polygon
+            key={`subvm-boundary-${subId}`}
+            positions={coords}
+            interactive={false}
+            pathOptions={{
+              color: highContrastMode || isSatelliteMode ? '#f8fafc' : '#1d4ed8',
+              weight: highContrastMode ? 4 : 3,
+              opacity: 0.95,
+              fillOpacity: 0,
+              dashArray: '8, 6',
+              lineCap: 'round',
+              lineJoin: 'round'
+            }}
+          />
+        ))}
 
         {/* ============================================================ */}
         {/* MOTOR 5: BUFFERS CONCÊNTRICOS & POLOS CÍVICOS (BIBLIOTECAS)  */}

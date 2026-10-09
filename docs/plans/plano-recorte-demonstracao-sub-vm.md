@@ -18,6 +18,8 @@ Restringir a demonstração operacional à **Subprefeitura Vila Mariana (SUB-VM)
 - Barra cartográfica **Vistas**, presets metropolitanos e recentralização removidos de Leaflet e MapLibre.
 - Enquadramento inicial dos mapas fixado na SUB-VM.
 - Loader territorial configurado para buscar somente `vila-mariana.geojson`.
+- A fonte `appdata/distritos.geojson` foi separada em Vila Mariana, Moema e Saúde, convertida de EPSG:31983 para WGS84 e exposta em três arquivos carregados sob demanda.
+- Contornos da SUB-VM e dos três distritos podem ser alternados independentemente nos seis modos cartográficos por botões de ícone no menu superior.
 - Os outros 31 arquivos GeoJSON permaneceram preservados em `public/data/subprefeituras/`.
 
 ## Validação

@@ -98,6 +98,8 @@ const LAYER_MAPPING: Record<LayerFilter, string[]> = {
 export default function SalaSituacao({ chamados, session }: { chamados: Chamado[], session: UserSession }) {
   const [viewMode, setViewMode] = useState<OccurrenceViewMode>('CLUSTER');
   const [showPontosCegos, setShowPontosCegos] = useState(false);
+  const [showSubprefeituraBoundary, setShowSubprefeituraBoundary] = useState(true);
+  const [showDistrictBoundaries, setShowDistrictBoundaries] = useState(false);
   const [isListOpen, setIsListOpen] = useState(false);
   
   const [activeLayer, setActiveLayer] = useState<LayerFilter>('TODOS');
@@ -306,6 +308,8 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 viewMode={viewMode}
                 mapEngineMode="LEAFLET"
                 showEngineHeader={false}
+                showSubprefeituraBoundary={showSubprefeituraBoundary}
+                showDistrictBoundaries={showDistrictBoundaries}
                 showPontosCegos={showPontosCegos}
                 onMarkerClick={handleMarkerClick}
                 selectedSubprefeitura={selectedSubprefeitura}
@@ -333,6 +337,8 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 is3DMode={mapLibre3DMode}
                 styleMode={mapLibreStyleMode}
                 resetOrientationVersion={mapLibreResetVersion}
+                showSubprefeituraBoundary={showSubprefeituraBoundary}
+                showDistrictBoundaries={showDistrictBoundaries}
               />
             )}
 
@@ -342,6 +348,8 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 viewMode="NORMAL"
                 mapEngineMode="SATELITE_ORTOFOTO"
                 showEngineHeader={false}
+                showSubprefeituraBoundary={showSubprefeituraBoundary}
+                showDistrictBoundaries={showDistrictBoundaries}
                 showPontosCegos={showPontosCegos}
                 onMarkerClick={handleMarkerClick}
                 selectedSubprefeitura={selectedSubprefeitura}
@@ -361,6 +369,8 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 viewMode="NORMAL"
                 mapEngineMode="CHOROPLETH_32_SUBS"
                 showEngineHeader={false}
+                showSubprefeituraBoundary={showSubprefeituraBoundary}
+                showDistrictBoundaries={showDistrictBoundaries}
                 showPontosCegos={showPontosCegos}
                 onMarkerClick={handleMarkerClick}
                 selectedSubprefeitura={selectedSubprefeitura}
@@ -380,6 +390,8 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 viewMode="NORMAL"
                 mapEngineMode="SERVICE_BUFFERS"
                 showEngineHeader={false}
+                showSubprefeituraBoundary={showSubprefeituraBoundary}
+                showDistrictBoundaries={showDistrictBoundaries}
                 showPontosCegos={showPontosCegos}
                 onMarkerClick={handleMarkerClick}
                 selectedSubprefeitura={selectedSubprefeitura}
@@ -400,6 +412,8 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                 viewMode="HEATMAP"
                 mapEngineMode="HEATMAP_KERNEL"
                 showEngineHeader={false}
+                showSubprefeituraBoundary={showSubprefeituraBoundary}
+                showDistrictBoundaries={showDistrictBoundaries}
                 showPontosCegos={showPontosCegos}
                 onMarkerClick={handleMarkerClick}
                 selectedSubprefeitura={selectedSubprefeitura}
@@ -752,6 +766,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                           }
                         ]}
                       />
+
                     </>
                   )
                 },
@@ -896,6 +911,41 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                   )
                 }
               ]}
+              actions={(
+                <>
+                  <button
+                    type="button"
+                    aria-pressed={showSubprefeituraBoundary}
+                    aria-label={`${showSubprefeituraBoundary ? 'Ocultar' : 'Mostrar'} contorno oficial da Subprefeitura Vila Mariana`}
+                    onClick={() => setShowSubprefeituraBoundary((visible) => !visible)}
+                    className={`btn btn-sm btn-square min-h-8 h-8 w-8 shadow-none transition-colors ${
+                      showSubprefeituraBoundary
+                        ? 'border-blue-500 bg-blue-600 text-white hover:border-blue-400 hover:bg-blue-500'
+                        : 'border-slate-700 bg-slate-800/90 text-slate-400 hover:border-slate-600 hover:bg-slate-700 hover:text-white'
+                    }`}
+                    title={`${showSubprefeituraBoundary ? 'Ocultar' : 'Mostrar'} contorno da SUB-VM`}
+                  >
+                    <Hexagon className="h-4 w-4" />
+                    <span className="sr-only">Contorno da Subprefeitura Vila Mariana</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    aria-pressed={showDistrictBoundaries}
+                    aria-label={`${showDistrictBoundaries ? 'Ocultar' : 'Mostrar'} contornos dos distritos Vila Mariana, Moema e Saúde`}
+                    onClick={() => setShowDistrictBoundaries((visible) => !visible)}
+                    className={`btn btn-sm btn-square min-h-8 h-8 w-8 shadow-none transition-colors ${
+                      showDistrictBoundaries
+                        ? 'border-amber-400 bg-amber-500 text-slate-950 hover:border-amber-300 hover:bg-amber-400'
+                        : 'border-slate-700 bg-slate-800/90 text-slate-400 hover:border-slate-600 hover:bg-slate-700 hover:text-white'
+                    }`}
+                    title={`${showDistrictBoundaries ? 'Ocultar' : 'Mostrar'} distritos da SUB-VM`}
+                  >
+                    <Layers className="h-4 w-4" />
+                    <span className="sr-only">Distritos Vila Mariana, Moema e Saúde</span>
+                  </button>
+                </>
+              )}
             />
 
         {/* Modo Foco / Mapa Limpo Toggle */}

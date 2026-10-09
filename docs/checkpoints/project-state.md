@@ -58,6 +58,12 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
 
 ### Entregas concluídas
 
+- **Controles territoriais da SUB-VM e de seus distritos**:
+  - O menu cartográfico principal recebeu dois botões somente com ícone, à direita de **Ações**, com estados ativos e atributos acessíveis para alternar separadamente o limite da SUB-VM e os distritos Vila Mariana, Moema e Saúde.
+  - `appdata/distritos.geojson` foi separado em três arquivos dentro de `appdata/distritos/`; as geometrias EPSG:31983 foram convertidas para WGS84 e publicadas em `public/data/distritos/` para carregamento sob demanda.
+  - Os limites podem ser mostrados ou ocultados nos seis modos cartográficos; são linhas não interativas e não criam novas áreas de hover.
+  - Leaflet, satélite, buffers, heatmap, coroplético e MapLibre compartilham os mesmos estados de visibilidade.
+
 - **Detalhamento de tarefas e retorno Campo/Zap → Triagem**:
   - Clique ou acionamento por teclado em um cartão do Kanban abre modal com dados operacionais, territoriais, SLA e fotos ANTES/DEPOIS.
   - Evidências capturadas no App de Campo e no fluxo operacional do Zap são gravadas no chamado; dados legados recebem imagens demonstrativas explicitamente identificadas.

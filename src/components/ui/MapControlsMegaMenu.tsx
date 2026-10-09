@@ -11,9 +11,10 @@ export interface MapControlsMegaMenuGroup {
 
 interface MapControlsMegaMenuProps {
   groups: MapControlsMegaMenuGroup[];
+  actions?: ReactNode;
 }
 
-export default function MapControlsMegaMenu({ groups }: MapControlsMegaMenuProps) {
+export default function MapControlsMegaMenu({ groups, actions }: MapControlsMegaMenuProps) {
   const instanceId = useId().replace(/:/g, '');
   const menuId = `map-megamenu-${instanceId}`;
 
@@ -40,7 +41,7 @@ export default function MapControlsMegaMenu({ groups }: MapControlsMegaMenuProps
       <div
         id={menuId}
         popover="auto"
-        className="megamenu megamenu-sm max-sm:megamenu-vertical pointer-events-auto w-max max-w-[calc(100vw-1.5rem)] overflow-x-auto border border-slate-700/80 bg-slate-900/95 p-1 text-white shadow-2xl backdrop-blur-md sm:max-w-[calc(100vw-2rem)] sm:rounded-xl"
+        className="megamenu megamenu-sm max-sm:megamenu-vertical pointer-events-auto w-max max-w-[calc(100vw-1.5rem)] overflow-x-auto border border-slate-700/80 bg-slate-900/95 p-1 text-white shadow-2xl backdrop-blur-md max-sm:max-h-[calc(100dvh-7rem)] max-sm:overflow-y-auto sm:max-w-[calc(100vw-2rem)] sm:rounded-xl"
       >
         <span className="megamenu-active bg-white/10" aria-hidden="true" />
 
@@ -80,6 +81,12 @@ export default function MapControlsMegaMenu({ groups }: MapControlsMegaMenuProps
             </React.Fragment>
           );
         })}
+
+        {actions && (
+          <div className="flex items-center gap-1 border-l border-slate-700 pl-1 max-sm:order-first max-sm:border-l-0 max-sm:border-b max-sm:pb-1 max-sm:pl-0">
+            {actions}
+          </div>
+        )}
       </div>
     </div>
   );

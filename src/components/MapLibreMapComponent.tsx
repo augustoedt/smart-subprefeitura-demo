@@ -3,6 +3,8 @@ import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Chamado, Subprefeitura, FonteDadosPublica, HotspotCruzamento, CamadaMapeada, BibliotecaPublicaGeolocalizada } from '../types';
 import { useApp } from '../context/AppContext';
+import { loadSubprefeituraPolygons, SubprefeituraPolygons } from '../subprefeituraBoundaries';
+import { DistrictBoundary, loadDistrictBoundaries } from '../districtBoundaries';
 import { 
   Layers, Eye, ShieldAlert, BookOpen, Sparkles, Building2, MapPin, ZoomIn, ZoomOut,
   Navigation, Maximize2
@@ -23,6 +25,8 @@ interface MapLibreMapComponentProps {
   is3DMode: boolean;
   styleMode: MapLibreStyleMode;
   resetOrientationVersion: number;
+  showSubprefeituraBoundary: boolean;
+  showDistrictBoundaries: boolean;
 }
 
 export default function MapLibreMapComponent({
@@ -37,7 +41,9 @@ export default function MapLibreMapComponent({
   hotspotsCruzamento = [],
   is3DMode,
   styleMode,
-  resetOrientationVersion
+  resetOrientationVersion,
+  showSubprefeituraBoundary,
+  showDistrictBoundaries
 }: MapLibreMapComponentProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -187,6 +193,116 @@ export default function MapLibreMapComponent({
       pitch: is3DMode ? 45 : 0
     });
   }, [centerCoords, selectedSubId, is3DMode]);
+
+  // Sincronizar os contornos oficiais da SUB-VM e de seus três distritos no motor WebGL.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const subSourceId = 'subvm-boundary-source';
+    const subLayerId = 'subvm-boundary-line';
+    const districtSourceId = 'subvm-districts-source';
+    const districtLayerId = 'subvm-districts-line';
+    let cancelled = false;
+
+    const removeBoundaries = () => {
+      if (map.getLayer(subLayerId)) map.removeLayer(subLayerId);
+      if (map.getLayer(districtLayerId)) map.removeLayer(districtLayerId);
+      if (map.getSource(subSourceId)) map.removeSource(subSourceId);
+      if (map.getSource(districtSourceId)) map.removeSource(districtSourceId);
+    };
+
+    const renderBoundaries = async () => {
+      if (!map.isStyleLoaded()) return;
+
+      removeBoundaries();
+      if (!showSubprefeituraBoundary && !showDistrictBoundaries) return;
+
+      try {
+        const [subprefeituraPolygons, districts]: [SubprefeituraPolygons, DistrictBoundary[]] = await Promise.all([
+          showSubprefeituraBoundary ? loadSubprefeituraPolygons() : Promise.resolve({}),
+          showDistrictBoundaries ? loadDistrictBoundaries() : Promise.resolve([])
+        ]);
+        if (cancelled || mapRef.current !== map || !map.isStyleLoaded()) return;
+
+        if (showDistrictBoundaries) {
+          map.addSource(districtSourceId, {
+            type: 'geojson',
+            data: {
+              type: 'FeatureCollection' as const,
+              features: districts.map((district) => ({
+                type: 'Feature' as const,
+                properties: { id: district.id, nome: district.name },
+                geometry: {
+                  type: 'Polygon' as const,
+                  coordinates: [district.coordinates.map(([latitude, longitude]) => [longitude, latitude])]
+                }
+              }))
+            }
+          });
+          map.addLayer({
+            id: districtLayerId,
+            type: 'line',
+            source: districtSourceId,
+            paint: {
+              'line-color': highContrast ? '#fbbf24' : '#d97706',
+              'line-width': highContrast ? 3.5 : 2.5,
+              'line-opacity': 0.95,
+              'line-dasharray': [1.5, 1.75]
+            }
+          });
+        }
+
+        if (showSubprefeituraBoundary) {
+          map.addSource(subSourceId, {
+            type: 'geojson',
+            data: {
+              type: 'FeatureCollection' as const,
+              features: Object.entries(subprefeituraPolygons).map(([id, coordinates]) => ({
+                type: 'Feature' as const,
+                properties: { id, nome: 'Subprefeitura Vila Mariana' },
+                geometry: {
+                  type: 'Polygon' as const,
+                  coordinates: [coordinates.map(([latitude, longitude]) => [longitude, latitude])]
+                }
+              }))
+            }
+          });
+          map.addLayer({
+            id: subLayerId,
+            type: 'line',
+            source: subSourceId,
+            paint: {
+              'line-color': highContrast || styleMode === 'DARK' ? '#f8fafc' : '#1d4ed8',
+              'line-width': highContrast ? 4 : 3,
+              'line-opacity': 0.95,
+              'line-dasharray': [2.5, 2]
+            }
+          });
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Falha ao carregar os limites territoriais no MapLibre:', error);
+        }
+      }
+    };
+
+    const handleMapLoad = () => {
+      void renderBoundaries();
+    };
+
+    if (map.isStyleLoaded()) {
+      void renderBoundaries();
+    } else {
+      map.once('load', handleMapLoad);
+    }
+
+    return () => {
+      cancelled = true;
+      map.off('load', handleMapLoad);
+      if (mapRef.current === map && map.isStyleLoaded()) removeBoundaries();
+    };
+  }, [highContrast, mapStyle, showDistrictBoundaries, showSubprefeituraBoundary, styleMode]);
 
   // Sincronizar Marcadores de Camadas Ativas no MapLibre GL
   useEffect(() => {

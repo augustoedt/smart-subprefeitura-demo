@@ -9,6 +9,7 @@
     "start": "node dist/server.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
+    "data:districts": "node scripts/split-subvm-districts.mjs",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
