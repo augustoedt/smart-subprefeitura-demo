@@ -504,7 +504,7 @@ export default function PainelAdmin({ chamados, setChamados, session }: PainelAd
         </div>
 
         {/* Grade de 4 ou 8 KPIs Executivos */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
+        <div className="grid grid-flow-col auto-cols-[minmax(170px,1fr)] grid-rows-1 gap-2.5 overflow-x-auto pb-1 scrollbar-none sm:grid-flow-row sm:auto-cols-auto sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-4 sm:gap-3.5">
           {/* KPI 1: Backlog Ativo */}
           <div className="bg-white rounded-lg p-3.5 border border-slate-200 shadow-2xs relative">
             <div className="flex items-center justify-between mb-1.5">

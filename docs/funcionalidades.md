@@ -151,7 +151,7 @@ O painel apresenta oito grupos de indicadores:
 7. conformidade das evidências de campo;
 8. Índice de Eficiência de Zeladoria (IEZ).
 
-Os indicadores podem ser exibidos de forma compacta ou expandida.
+Os indicadores podem ser exibidos de forma compacta ou expandida. Em smartphones, os cards de KPI ficam em uma única faixa horizontal rolável para preservar a área visível do Kanban.
 
 ### 4.3 Kanban operacional
 
@@ -417,7 +417,7 @@ Os provedores ativos não exigem chaves registradas no projeto.
 - Navegação lateral no desktop e drawer no mobile.
 - Barra inferior móvel filtrada pelo perfil do usuário.
 - Alvos de toque dimensionados para uso em smartphones.
-- Kanban adaptado com seleção de coluna no mobile.
+- Kanban adaptado com seleção de coluna e KPIs em faixa horizontal rolável no mobile, mantendo os cartões de tarefas visíveis.
 - Painéis laterais convertidos em bottom sheets em telas pequenas.
 - Controles cartográficos horizontais no desktop e verticais no mobile.
 - Idioma da página definido como português do Brasil.
