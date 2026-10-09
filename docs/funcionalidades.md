@@ -169,6 +169,8 @@ Funcionalidades disponíveis:
 - filtros por categoria, prioridade, distrito e bairro;
 - chips rápidos de Vila Mariana, Moema e Saúde;
 - cartões com protocolo, categoria, prioridade, endereço, bairro e SLA;
+- abertura do cartão em modal detalhado, com localização, status, prioridade, origem, SLA, coordenadas e evidência disponível;
+- aprovação ou rejeição diretamente no modal quando a tarefa aguarda validação;
 - movimentação de chamados entre etapas do fluxo;
 - aprovação ou rejeição de vistorias;
 - identificação demonstrativa de duplicidades por proximidade;
@@ -225,6 +227,7 @@ Fluxo obrigatório:
 - Bloqueio de risco quando o checklist detecta condição não resolvida.
 - Escalonamento para supervisão, com reclassificação da prioridade para urgente.
 - Sincronização do novo status com o Kanban durante a sessão.
+- Após finalizar uma vistoria, usuários com acesso administrativo são direcionados diretamente à aba Triagem/Kanban; técnicos permanecem no módulo de campo por restrição de perfil e recebem a confirmação da operação.
 
 ---
 
@@ -337,7 +340,7 @@ A aplicação contém dois fluxos conversacionais demonstrativos.
 4. A demanda é encaminhada para execução.
 5. O técnico registra fotos e checklist no App de Campo.
 6. Uma condição de risco impede a conclusão e pode ser escalada para supervisão.
-7. Uma execução válida segue para aprovação do gestor.
+7. Uma execução válida segue para aprovação; quando o operador possui acesso administrativo, a interface abre diretamente a aba Triagem/Kanban.
 8. A aprovação conclui o chamado e gera comunicação demonstrativa ao cidadão.
 9. O Painel Administrativo consolida indicadores e produz o relatório para impressão.
 

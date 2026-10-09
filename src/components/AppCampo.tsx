@@ -32,6 +32,7 @@ import { useApp } from '../context/AppContext';
 interface AppCampoProps {
   chamados: Chamado[];
   setChamados: React.Dispatch<React.SetStateAction<Chamado[]>>;
+  onNavigateToTriagem?: () => void;
 }
 
 // Configuração visual idêntica à Sala de Situação e Kanban do Painel Administrativo
@@ -228,7 +229,7 @@ function getDistanciaFicticiaKm(c: Chamado): number {
   return Number(Math.max(0.3, dist).toFixed(1));
 }
 
-export default function AppCampo({ chamados, setChamados, session }: AppCampoProps & { session: UserSession }) {
+export default function AppCampo({ chamados, setChamados, session, onNavigateToTriagem }: AppCampoProps & { session: UserSession }) {
   const { addNotification } = useApp();
   const [isLoggedIn, setIsLoggedIn] = useState(!!session?.matricula);
   const [funcionario, setFuncionario] = useState({ 
@@ -321,13 +322,19 @@ export default function AppCampo({ chamados, setChamados, session }: AppCampoPro
     ));
 
     if (chamadoFinalizado) {
+      const canAccessTriagem = session.role === 'CENTRAL' || session.role === 'GESTOR';
+
       addNotification({
         titulo: 'Vistoria Concluída no App de Campo',
         mensagem: `OS ${chamadoFinalizado.protocolo} enviada para "Aguardando Aprovação" com fotos antes/depois e checklist 100% conforme.`,
         tipo: 'sucesso',
-        linkSection: 'painel_admin',
+        linkSection: canAccessTriagem ? 'painel_admin' : undefined,
         protocolo: chamadoFinalizado.protocolo
       });
+
+      if (canAccessTriagem) {
+        onNavigateToTriagem?.();
+      }
     }
 
     setSelectedChamadoId(null);
@@ -356,7 +363,7 @@ export default function AppCampo({ chamados, setChamados, session }: AppCampoPro
           titulo: 'Alerta Operacional: OS Escalada para Supervisão',
           mensagem: `OS ${chamadoEscalado.protocolo} marcou risco ativo não resolvido no checklist. Reclassificada como URGENTE.`,
           tipo: 'urgente',
-          linkSection: 'painel_admin',
+          linkSection: session.role === 'CENTRAL' || session.role === 'GESTOR' ? 'painel_admin' : undefined,
           protocolo: chamadoEscalado.protocolo
         });
       }

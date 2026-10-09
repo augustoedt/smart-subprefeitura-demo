@@ -58,6 +58,11 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
 
 ### Entregas concluídas
 
+- **Detalhamento de tarefas e retorno Campo → Triagem**:
+  - Clique ou acionamento por teclado em um cartão do Kanban abre modal com dados operacionais, territoriais, SLA e evidências.
+  - Tarefas aguardando aprovação podem ser aprovadas ou rejeitadas dentro do modal.
+  - Ao finalizar a vistoria no App de Campo, perfis com acesso administrativo seguem diretamente para a aba Triagem/Kanban; o técnico permanece restrito ao módulo de campo.
+
 - **Correção de visibilidade do Kanban em todos os viewports**:
   - O painel abre com quatro KPIs principais; os quatro indicadores adicionais permanecem acessíveis pelo controle de expansão.
   - No mobile, os KPIs usam faixa horizontal rolável; no desktop, preservam a grade responsiva.

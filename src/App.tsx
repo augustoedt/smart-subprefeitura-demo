@@ -24,6 +24,7 @@ import AppOverlays from './components/AppOverlays';
 export default function App() {
   const [session, setSession] = useState<UserSession | null>(null);
   const [currentSection, setCurrentSection] = useState<Section>('sala_situacao');
+  const [painelAdminInitialTab, setPainelAdminInitialTab] = useState<'COCKPIT' | 'KANBAN' | 'WHATSAPP'>('COCKPIT');
   const [chamados, setChamados] = useState<Chamado[]>(mockChamados);
   const [zapSession, setZapSession] = useState<ZapChatSession>(MOCK_CONVERSA_INICIAL);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
@@ -79,6 +80,7 @@ export default function App() {
   if (!session) {
     return <LoginScreen onLogin={(s) => {
       setSession(s);
+      setPainelAdminInitialTab('COCKPIT');
       if (s.role === 'FUNCIONARIO') {
         setCurrentSection('app_campo');
       } else if (s.role === 'ASSISTENTE_SOCIAL') {
@@ -225,9 +227,22 @@ export default function App() {
         {currentSection === 'sala_situacao' ? (
           <SalaSituacao chamados={chamados} session={session} />
         ) : currentSection === 'painel_admin' ? (
-          <PainelAdmin chamados={chamados} setChamados={updateChamadosComNotificacao} session={session} />
+          <PainelAdmin
+            chamados={chamados}
+            setChamados={updateChamadosComNotificacao}
+            session={session}
+            initialTab={painelAdminInitialTab}
+          />
         ) : currentSection === 'app_campo' ? (
-          <AppCampo chamados={chamados} setChamados={updateChamadosComNotificacao} session={session} />
+          <AppCampo
+            chamados={chamados}
+            setChamados={updateChamadosComNotificacao}
+            session={session}
+            onNavigateToTriagem={() => {
+              setPainelAdminInitialTab('KANBAN');
+              setCurrentSection('painel_admin');
+            }}
+          />
         ) : currentSection === 'simulacao_zap' ? (
           <SimulacaoZap 
             chamados={chamados} 

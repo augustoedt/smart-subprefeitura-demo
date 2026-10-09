@@ -17,9 +17,12 @@ import { BAIRROS_SUB_VILA_MARIANA } from '../data';
 import BrasaoSaoPaulo from './BrasaoSaoPaulo';
 import { useApp } from '../context/AppContext';
 
+type PainelAdminTab = 'COCKPIT' | 'KANBAN' | 'WHATSAPP';
+
 interface PainelAdminProps {
   chamados: Chamado[];
   setChamados: React.Dispatch<React.SetStateAction<Chamado[]>>;
+  initialTab?: PainelAdminTab;
 }
 
 const DISTANCE_THRESHOLD = 0.0009; // approx 100 meters in degrees
@@ -186,12 +189,29 @@ function getSlaProgress(chamado: Chamado) {
   };
 }
 
-export default function PainelAdmin({ chamados, setChamados, session }: PainelAdminProps & { session: UserSession }) {
+export default function PainelAdmin({ chamados, setChamados, session, initialTab = 'COCKPIT' }: PainelAdminProps & { session: UserSession }) {
   const { addNotification } = useApp();
   const [whatsappPreview, setWhatsappPreview] = useState<Chamado | null>(null);
-  const [activeTab, setActiveTab] = useState<'COCKPIT' | 'KANBAN' | 'WHATSAPP'>('COCKPIT');
+  const [activeTab, setActiveTab] = useState<PainelAdminTab>(initialTab);
   const [showPdfReport, setShowPdfReport] = useState(false);
   const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null);
+  const [selectedKanbanChamadoId, setSelectedKanbanChamadoId] = useState<string | null>(null);
+  const selectedKanbanChamado = chamados.find((chamado) => chamado.id === selectedKanbanChamadoId) ?? null;
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
+  useEffect(() => {
+    if (!selectedKanbanChamadoId) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSelectedKanbanChamadoId(null);
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [selectedKanbanChamadoId]);
 
   // Estados de Filtros e Busca no Kanban por Bairro / Distrito
   const [searchProtocolo, setSearchProtocolo] = useState('');
@@ -887,9 +907,23 @@ export default function PainelAdmin({ chamados, setChamados, session }: PainelAd
                     const fotoDepoisUrl = chamado.fotoDepois || 'https://images.unsplash.com/photo-1449844908441-8829872d2607?auto=format&fit=crop&q=80&w=400&h=300';
 
                     return (
-                      <div 
-                        key={chamado.id} 
-                        className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-xl p-3.5 shadow-xs hover:shadow-md transition-all flex flex-col gap-2.5 relative group/card"
+                      <div
+                        key={chamado.id}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Abrir detalhes do chamado ${chamado.protocolo}`}
+                        onClick={(event) => {
+                          if ((event.target as HTMLElement).closest('button, [data-prevent-card-modal]')) return;
+                          setSelectedKanbanChamadoId(chamado.id);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.target !== event.currentTarget) return;
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            setSelectedKanbanChamadoId(chamado.id);
+                          }
+                        }}
+                        className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-xl p-3.5 shadow-xs hover:shadow-md transition-all flex flex-col gap-2.5 relative group/card cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                       >
                         {/* Linha Superior: Ícone da Categoria + Título + Protocolo e Selo de Prioridade */}
                         <div className="flex items-start justify-between gap-2">
@@ -941,7 +975,8 @@ export default function PainelAdmin({ chamados, setChamados, session }: PainelAd
                         {/* Miniatura da Foto "Depois" anexada (quando houver) */}
                         {temFotoDepois && (
                           <div className="flex flex-col gap-2 pt-0.5">
-                            <div 
+                            <div
+                              data-prevent-card-modal
                               onClick={() => setPreviewPhotoUrl(fotoDepoisUrl)}
                               className="w-full h-24 rounded-lg overflow-hidden relative border border-slate-200 cursor-pointer group/thumb shadow-inner bg-slate-100"
                               title="Clique para ampliar a foto comprobatória"
@@ -1061,6 +1096,174 @@ export default function PainelAdmin({ chamados, setChamados, session }: PainelAd
       )}
 
       
+      {/* Modal de detalhes do cartão do Kanban */}
+      {selectedKanbanChamado && (() => {
+        const category = CATEGORY_CONFIG[selectedKanbanChamado.categoria] || CATEGORY_CONFIG.ARVORE_CAIDA;
+        const CategoryIcon = category.icon;
+        const priority = PRIORITY_CONFIG[selectedKanbanChamado.prioridade] || PRIORITY_CONFIG.MEDIA;
+        const status = columns.find((column) => column.id === selectedKanbanChamado.status);
+        const sla = getSlaProgress(selectedKanbanChamado);
+        const subNome = subprefeituras.find((sub) => sub.id === selectedKanbanChamado.subprefeituraId)?.nome || 'Vila Mariana';
+
+        return (
+          <div
+            className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:p-6"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setSelectedKanbanChamadoId(null);
+            }}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="kanban-task-modal-title"
+              className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl"
+            >
+              <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-6">
+                <div className="flex min-w-0 items-start gap-3">
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${category.borderColor} ${category.bgLight} ${category.textColor}`}>
+                    <CategoryIcon size={20} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-mono text-xs font-semibold text-slate-500">{selectedKanbanChamado.protocolo}</p>
+                    <h2 id="kanban-task-modal-title" className="truncate text-lg font-bold text-slate-950">
+                      {category.label}
+                    </h2>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedKanbanChamadoId(null)}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+                  aria-label="Fechar detalhes do chamado"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="overflow-y-auto p-4 sm:p-6">
+                <div className="mb-5 flex flex-wrap items-center gap-2">
+                  <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${status?.color || 'border-slate-200 bg-slate-100 text-slate-700'}`}>
+                    {status?.title || selectedKanbanChamado.status.replace(/_/g, ' ')}
+                  </span>
+                  <span className={`rounded-full border px-2.5 py-1 text-xs ${priority.badgeStyle}`}>
+                    {priority.label}
+                  </span>
+                  {selectedKanbanChamado.isAtrasado && selectedKanbanChamado.status !== 'CONCLUIDO' && (
+                    <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700">
+                      SLA atrasado
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <section className="rounded-lg border border-slate-200 p-4 sm:col-span-2">
+                    <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">Localização</h3>
+                    <p className="flex items-start gap-2 text-sm font-semibold text-slate-900">
+                      <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />
+                      <span>{selectedKanbanChamado.endereco || 'Endereço não informado'}</span>
+                    </p>
+                    <p className="mt-2 pl-6 text-xs text-slate-500">
+                      {selectedKanbanChamado.bairro || 'Bairro não informado'} • {selectedKanbanChamado.distrito || subNome}
+                    </p>
+                  </section>
+
+                  <section className="rounded-lg border border-slate-200 p-4">
+                    <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">Abertura</h3>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {new Date(selectedKanbanChamado.dataAbertura).toLocaleString('pt-BR')}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">Origem: {(selectedKanbanChamado.origem || 'SP156_WEB').replace(/_/g, ' ')}</p>
+                  </section>
+
+                  <section className="rounded-lg border border-slate-200 p-4">
+                    <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">Prazo operacional</h3>
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="font-semibold text-slate-900">SLA: {sla.slaHoras}h</span>
+                      <span className={sla.textColor}>{sla.statusText}</span>
+                    </div>
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div className={`h-full rounded-full ${sla.barColor}`} style={{ width: `${sla.barWidth}%` }} />
+                    </div>
+                  </section>
+
+                  <section className="rounded-lg border border-slate-200 p-4 sm:col-span-2">
+                    <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">Referência territorial</h3>
+                    <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
+                      <div>
+                        <span className="block text-xs text-slate-500">Subprefeitura</span>
+                        <strong className="text-slate-900">{subNome}</strong>
+                      </div>
+                      <div>
+                        <span className="block text-xs text-slate-500">Distrito</span>
+                        <strong className="text-slate-900">{selectedKanbanChamado.distrito || 'Não informado'}</strong>
+                      </div>
+                      <div>
+                        <span className="block text-xs text-slate-500">Coordenadas</span>
+                        <strong className="font-mono text-xs text-slate-900">
+                          {selectedKanbanChamado.lat.toFixed(5)}, {selectedKanbanChamado.lng.toFixed(5)}
+                        </strong>
+                      </div>
+                    </div>
+                  </section>
+
+                  {selectedKanbanChamado.fotoDepois && (
+                    <section className="rounded-lg border border-slate-200 p-4 sm:col-span-2">
+                      <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">Evidência de campo</h3>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewPhotoUrl(selectedKanbanChamado.fotoDepois || null)}
+                        className="block w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-100 text-left"
+                      >
+                        <img
+                          src={selectedKanbanChamado.fotoDepois}
+                          alt={`Foto de conclusão do chamado ${selectedKanbanChamado.protocolo}`}
+                          className="max-h-64 w-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </button>
+                    </section>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-col-reverse gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:justify-end sm:px-6">
+                <button
+                  type="button"
+                  onClick={() => setSelectedKanbanChamadoId(null)}
+                  className="min-h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+                >
+                  Fechar
+                </button>
+                {selectedKanbanChamado.status === 'AGUARDANDO_APROVACAO' && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleRejeitar(selectedKanbanChamado.id);
+                        setSelectedKanbanChamadoId(null);
+                      }}
+                      className="min-h-10 rounded-lg border border-rose-200 bg-white px-4 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-50"
+                    >
+                      Rejeitar vistoria
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleAprovar(selectedKanbanChamado.id);
+                        setSelectedKanbanChamadoId(null);
+                      }}
+                      className="min-h-10 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-emerald-800"
+                    >
+                      Aprovar e concluir
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* PDF Report Modal */}
       {showPdfReport && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 sm:p-8 overflow-y-auto print:p-0 print:bg-white print:block">
