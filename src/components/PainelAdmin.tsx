@@ -332,7 +332,7 @@ export default function PainelAdmin({ chamados, setChamados, session }: PainelAd
   const conformidadeChecklist = Math.round((chamados.filter(c => c.status === 'CONCLUIDO' || Boolean(c.fotoDepois)).length / (chamados.length || 1)) * 100) || 0;
   const indiceEficiencia = Math.min(100, Math.round((pctNoPrazo * 0.4) + (taxaResolucao * 0.35) + ((100 - pctReincidente) * 0.15) + (conformidadeChecklist * 0.1)));
   
-  const [showExpandedKpis, setShowExpandedKpis] = useState(true);
+  const [showExpandedKpis, setShowExpandedKpis] = useState(false);
 
   // Kanban Columns
   const columns: { id: StatusChamado; title: string; color: string }[] = [
@@ -484,7 +484,7 @@ export default function PainelAdmin({ chamados, setChamados, session }: PainelAd
           />
         </div>
       ) : (
-        <div className="flex-1 min-h-0 flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col overflow-y-auto">
 
       {/* KPI Header */}
       <div className="p-4 sm:p-6 shrink-0 border-b border-slate-200 bg-white">
@@ -832,7 +832,7 @@ export default function PainelAdmin({ chamados, setChamados, session }: PainelAd
       </div>
 
       {/* Kanban Board */}
-      <div className="flex-1 min-h-0 overflow-x-auto p-3 sm:p-6 scrollbar-none">
+      <div className="flex-1 min-h-[28rem] shrink-0 overflow-x-auto p-3 sm:p-6 scrollbar-none">
         <div className="flex gap-4 sm:gap-6 h-full pb-4 snap-x snap-mandatory items-stretch">
           {columns
             .filter(col => mobileColumnFilter === 'TODAS' || mobileColumnFilter === col.id)

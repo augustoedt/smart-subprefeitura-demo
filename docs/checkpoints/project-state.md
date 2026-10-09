@@ -58,9 +58,10 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
 
 ### Entregas concluídas
 
-- **Correção de visibilidade do Kanban em smartphones**:
-  - Os oito KPIs deixaram de ocupar várias linhas verticais e passaram a uma faixa horizontal rolável no mobile.
-  - A área útil das colunas e dos cartões de tarefas foi restaurada sem alterar a grade 2x4 do desktop.
+- **Correção de visibilidade do Kanban em todos os viewports**:
+  - O painel abre com quatro KPIs principais; os quatro indicadores adicionais permanecem acessíveis pelo controle de expansão.
+  - No mobile, os KPIs usam faixa horizontal rolável; no desktop, preservam a grade responsiva.
+  - O quadro ganhou altura mínima protegida e rolagem vertical do painel, impedindo que indicadores e filtros comprimam os cartões de tarefas.
 
 - **Catálogo funcional consolidado**:
   - [`docs/funcionalidades.md`](../funcionalidades.md) documenta módulos ativos, perfis, fluxos integrados, cartografia, dados, integrações, responsividade e limites da demonstração.
