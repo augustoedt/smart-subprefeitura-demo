@@ -1,6 +1,6 @@
 # Plano — Recorte territorial exclusivo da demonstração SUB-VM
 
-**Status:** concluído em 2026-10-08  
+**Status:** concluído em 2026-10-08
 **Branch:** `feature/vila-mariana-only`
 
 ## Objetivo
