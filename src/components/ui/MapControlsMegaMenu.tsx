@@ -40,7 +40,7 @@ export default function MapControlsMegaMenu({ groups }: MapControlsMegaMenuProps
       <div
         id={menuId}
         popover="auto"
-        className="megamenu megamenu-xs megamenu-wide max-sm:megamenu-vertical pointer-events-auto w-full border border-slate-700/80 bg-slate-900/95 p-1 text-white shadow-2xl backdrop-blur-md sm:rounded-xl"
+        className="megamenu megamenu-sm megamenu-wide max-sm:megamenu-vertical pointer-events-auto w-full border border-slate-700/80 bg-slate-900/95 p-1 text-white shadow-2xl backdrop-blur-md sm:rounded-xl"
       >
         <span className="megamenu-active bg-white/10" aria-hidden="true" />
 
@@ -55,7 +55,7 @@ export default function MapControlsMegaMenu({ groups }: MapControlsMegaMenuProps
                 className="min-w-0 gap-1.5 rounded-lg px-2 text-slate-200 hover:bg-slate-800 hover:text-white"
               >
                 {group.icon}
-                <span className="text-[10px] font-semibold">{group.label}</span>
+                <span className="font-semibold">{group.label}</span>
                 {group.value && (
                   <span className="max-w-24 truncate text-[9px] font-medium text-slate-400">
                     {group.value}

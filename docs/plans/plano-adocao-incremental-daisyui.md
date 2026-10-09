@@ -24,7 +24,7 @@ Adicionar o DaisyUI como camada de componentes sobre o Tailwind CSS v4 e criar u
 - **Legenda & Camadas** tornou-se recolhível, deixando somente um botão compacto de maximização no canto inferior esquerdo.
 - O toast inicial **“Subprefeitura Vila Mariana Conectada”** agora é removido automaticamente quatro segundos após ser exibido.
 - A etapa de dropdowns teve validação visual em desktop e viewport móvel de 390 × 844; o megamenu subsequente foi verificado sem automação de navegador, conforme solicitado.
-- `npm run lint` e `npm run build` aprovados. O artefato com megamenu ficou em 295,75 kB de CSS e 2.608,47 kB de JavaScript; o aumento adicional vem do componente `megamenu` do DaisyUI.
+- `npm run lint` e `npm run build` aprovados. O artefato com megamenu ficou em 295,75 kB de CSS e 2.608,46 kB de JavaScript; o aumento adicional vem do componente `megamenu` do DaisyUI.
 - Piloto ainda não promovido para `feature/vila-mariana-only` nem para a Railway.
 
 ## Contexto atual
