@@ -11,15 +11,30 @@ import {
   Building2, Radio, CheckCircle2, Flame, BarChart3, Layers,
   RotateCcw, Navigation, Maximize2, Sparkles, ChevronDown
 } from 'lucide-react';
-import { Chamado, Subprefeitura, FonteDadosPublica, PontoFontePublica, HotspotCruzamento, MapEngineType, BibliotecaPublicaGeolocalizada } from '../types';
+import { Chamado, Subprefeitura, FonteDadosPublica, PontoFontePublica, HotspotCruzamento, MapEngineType, BibliotecaPublicaGeolocalizada, MetricasRegionais } from '../types';
 import { subprefeituras } from '../data';
-import { METRICAS_SUBPREFEITURAS_SP } from '../dataRegioes';
 import { loadSubprefeituraPolygons, SubprefeituraPolygons } from '../subprefeituraBoundaries';
 import { BIBLIOTECAS_PUBLICAS_SP } from '../dataLayerMapping';
 
 const BIBLIOTECAS_SUB_VM = BIBLIOTECAS_PUBLICAS_SP.filter(
   (biblioteca) => biblioteca.subprefeituraId === '2'
 );
+
+const METRICAS_SUB_VM: MetricasRegionais = {
+  subprefeituraId: '2',
+  nome: 'Vila Mariana',
+  zona: 'SUL',
+  populacao: 293309,
+  totalDemandas: 215,
+  demandasPor10k: 7.3,
+  tmaHoras: 26.8,
+  slaCumpridoPercentual: 93.4,
+  taxaReincidenciaPercentual: 4.1,
+  taxaResolucaoPercentual: 94.6,
+  chamadosAbertos: 22,
+  chamadosConcluidos: 193,
+  criticidadeAlta: 19
+};
 
 // Custom icon para chamados de zeladoria
 const createCustomIcon = (chamado: Chamado, highContrast: boolean = false) => {
@@ -396,9 +411,7 @@ export default function MapComponent({
 
   // Dicionário rápido de métricas por subprefeitura ID
   const metricasPorSubId = useMemo(() => {
-    const map = new Map<string, typeof METRICAS_SUBPREFEITURAS_SP[0]>();
-    METRICAS_SUBPREFEITURAS_SP.forEach(m => map.set(m.subprefeituraId, m));
-    return map;
+    return new Map<string, MetricasRegionais>([['2', METRICAS_SUB_VM]]);
   }, []);
 
   // Cor dinâmica para o polígono oficial da SUB-VM
