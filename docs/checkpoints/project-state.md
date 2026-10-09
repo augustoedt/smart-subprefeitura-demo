@@ -60,7 +60,7 @@ A plataforma **Remix Smart Subprefeituras** está consolidada e operacionalmente
 
 - **Integração DaisyUI e megamenu cartográfico promovida para `main` e produção**:
   - Tema institucional `subvm`, `ControlDropdown` e `MapControlsMegaMenu` incorporados à linha principal.
-  - Megamenu `wide` com quatro títulos curtos: Filtros, Mapa, Motor e Ações; conteúdo horizontal no desktop e vertical no mobile.
+  - Megamenu com quatro títulos curtos: Filtros, Mapa, Motor e Ações; popovers horizontais ajustados ao conteúdo no desktop e composição vertical no mobile.
   - Antigas barras superiores e inferior consolidadas; controles MapLibre preservados dentro do grupo Motor.
   - Branches de feature locais e remotas removidas após o merge.
   - Railway migrada para `main`; deployment `7884e1c1-a863-4a7a-a26a-f640efe9c37b` confirmado como `SUCCESS`.

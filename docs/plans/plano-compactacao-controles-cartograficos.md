@@ -8,8 +8,8 @@
 
 ## Resultado
 
-- O HUD agora usa um único `megamenu-wide` no topo, com quatro títulos curtos: **Filtros**, **Mapa**, **Motor** e **Ações**.
-- Cada título abre um popover largo e horizontal que preserva os controles dos blocos anteriores; no mobile, um único botão **Controles** abre a composição vertical.
+- O HUD agora usa um único megamenu no topo, com quatro títulos curtos: **Filtros**, **Mapa**, **Motor** e **Ações**.
+- Cada título abre um popover horizontal limitado à largura dos próprios controles, sem ocupar todo o mapa; no mobile, um único botão **Controles** abre a composição vertical.
 - **Filtros** concentra distrito, categorias e fontes; **Mapa** contém Mapa, Ocorrências, Painéis e Exibição; **Motor** reúne os controles contextuais do motor ativo; **Ações** absorve a antiga barra inferior.
 - O menu interno **Mapa** preserva os seis motores com rótulos e descrições curtas.
 - **Ocorrências** oferece Agrupadas/Individuais somente no Leaflet e informa “Definido pelo mapa” nos demais motores.

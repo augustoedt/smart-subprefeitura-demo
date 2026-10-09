@@ -57,7 +57,7 @@ Planos de trabalho ativos e documentos vivos de evolução contínua da soluçã
 - [`plano-expansao-geoespacial-e-indicadores.md`](plans/plano-expansao-geoespacial-e-indicadores.md) — Plano em execução para delimitação territorial, HUD e indicadores públicos de segurança/trânsito.
 - [`etapa-6-delimitacao-geografica.md`](plans/etapa-6-delimitacao-geografica.md) — Plano planejado para delimitação GeoJSON das 32 subprefeituras.
 - [`plano-recorte-demonstracao-sub-vm.md`](plans/plano-recorte-demonstracao-sub-vm.md) — **Plano executado**: recorte integral da demonstração para Vila Mariana, Moema e Saúde.
-- [`plano-compactacao-controles-cartograficos.md`](plans/plano-compactacao-controles-cartograficos.md) — **Implementado em produção**: controles consolidados em megamenu wide com quatro grupos contextuais.
+- [`plano-compactacao-controles-cartograficos.md`](plans/plano-compactacao-controles-cartograficos.md) — **Implementado em produção**: controles consolidados em megamenu com quatro grupos e popovers horizontais ajustados ao conteúdo.
 - [`plano-adocao-incremental-daisyui.md`](plans/plano-adocao-incremental-daisyui.md) — **Implementado em produção**: DaisyUI sobre Tailwind v4 com tema institucional SUB-VM e megamenu cartográfico.
 
 ### `runbooks/`
