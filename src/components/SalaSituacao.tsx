@@ -918,7 +918,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                     aria-pressed={showSubprefeituraBoundary}
                     aria-label={`${showSubprefeituraBoundary ? 'Ocultar' : 'Mostrar'} contorno oficial da Subprefeitura Vila Mariana`}
                     onClick={() => setShowSubprefeituraBoundary((visible) => !visible)}
-                    className={`btn btn-sm btn-square min-h-8 h-8 w-8 shadow-none transition-colors ${
+                    className={`btn btn-sm btn-square min-h-8 h-8 w-8 shadow-none transition-colors max-sm:min-h-11 max-sm:h-11 max-sm:w-11 ${
                       showSubprefeituraBoundary
                         ? 'border-blue-500 bg-blue-600 text-white hover:border-blue-400 hover:bg-blue-500'
                         : 'border-slate-700 bg-slate-800/90 text-slate-400 hover:border-slate-600 hover:bg-slate-700 hover:text-white'
@@ -934,7 +934,7 @@ export default function SalaSituacao({ chamados, session }: { chamados: Chamado[
                     aria-pressed={showDistrictBoundaries}
                     aria-label={`${showDistrictBoundaries ? 'Ocultar' : 'Mostrar'} contornos dos distritos Vila Mariana, Moema e Saúde`}
                     onClick={() => setShowDistrictBoundaries((visible) => !visible)}
-                    className={`btn btn-sm btn-square min-h-8 h-8 w-8 shadow-none transition-colors ${
+                    className={`btn btn-sm btn-square min-h-8 h-8 w-8 shadow-none transition-colors max-sm:min-h-11 max-sm:h-11 max-sm:w-11 ${
                       showDistrictBoundaries
                         ? 'border-amber-400 bg-amber-500 text-slate-950 hover:border-amber-300 hover:bg-amber-400'
                         : 'border-slate-700 bg-slate-800/90 text-slate-400 hover:border-slate-600 hover:bg-slate-700 hover:text-white'

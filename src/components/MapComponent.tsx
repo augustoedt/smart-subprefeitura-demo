@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, useMap, ZoomControl, Circle, Tooltip, Polyline, Polygon } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap, ZoomControl, Circle, Tooltip, Polyline, Polygon, Pane } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -511,6 +511,9 @@ export default function MapComponent({
           selectedSubId={selectedSubprefeitura?.id}
           selectedSubCoords={selectedSubCoords}
         />
+
+        {/* Mantém os limites territoriais legíveis acima de heatmaps e buffers. */}
+        <Pane name="territorial-boundaries" style={{ zIndex: 460, pointerEvents: 'none' }} />
         
         {/* ============================================================ */}
         {/* MOTOR 4: POLÍGONO COROPLÉTICO OFICIAL DA SUB-VM */}
@@ -584,6 +587,7 @@ export default function MapComponent({
           <Polygon
             key={`district-boundary-${district.id}`}
             positions={district.coordinates}
+            pane="territorial-boundaries"
             interactive={false}
             pathOptions={{
               color: highContrastMode ? '#fbbf24' : '#d97706',
@@ -602,6 +606,7 @@ export default function MapComponent({
           <Polygon
             key={`subvm-boundary-${subId}`}
             positions={coords}
+            pane="territorial-boundaries"
             interactive={false}
             pathOptions={{
               color: highContrastMode || isSatelliteMode ? '#f8fafc' : '#1d4ed8',

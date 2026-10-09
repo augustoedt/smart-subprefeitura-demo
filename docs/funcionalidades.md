@@ -57,7 +57,7 @@ A Sala de Situação é o ambiente cartográfico e analítico para monitoramento
 - Mapa em tela cheia com zoom e arraste nativos.
 - Enquadramento inicial na Subprefeitura Vila Mariana.
 - Contorno territorial oficial carregado a partir de `vila-mariana.geojson` e exibido nos seis modos cartográficos.
-- Contornos oficiais dos distritos Vila Mariana, Moema e Saúde, derivados de `appdata/distritos.geojson` e carregados sob demanda.
+- Contornos oficiais dos distritos Vila Mariana, Moema e Saúde, filtrados da malha municipal `appdata/distritos.geojson` e carregados sob demanda.
 - Dois botões somente com ícone no menu cartográfico principal, à direita de **Ações**, mostram ou ocultam separadamente o limite da SUB-VM e seus distritos, sem interferir nos elementos com hover.
 - Marcadores de chamados e pontos de fontes públicas.
 - Seleção de chamados e equipamentos para abrir painéis de detalhes.
